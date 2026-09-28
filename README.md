@@ -40,6 +40,18 @@ Contrôles ultérieurs : `systemctl status psychoevaluation --no-pager` et `syst
 
 Validation effectuée : service local accessible, 28 tables après les nouvelles migrations, sauvegarde chiffrée restaurée dans une base distincte et déchiffrement réussi. La copie temporaire de contrôle a ensuite été supprimée.
 
+## Préparation Render gratuit et Aiven
+
+`render.yaml` décrit un service web Docker sur le plan gratuit. Le démarrage Apache utilise le port fourni par Render et son adresse HTTPS. Le certificat Aiven est transmis par `AIVEN_CA_BASE64`, puis écrit dans le stockage privé au démarrage ; sa lecture est contrôlée et PDO utilise ce certificat pour la connexion TLS.
+
+Les fichiers locaux `.env.aiven` (opérations depuis cette machine) et `.env.render` (paramètres à saisir dans Render) sont privés et exclus de Git et de l’image Docker. Ne pas les publier ni les coller dans une conversation. `.env.render` conserve la clé de chiffrement existante. Les paramètres du serveur Render se saisissent dans **Environment → Add from .env** ; l’URL est déduite automatiquement de `RENDER_EXTERNAL_URL` sauf si `APP_URL` est définie explicitement.
+
+Les tables de la base Aiven ont été créées avec `php artisan migrate --env=aiven --force`. Aucun dossier patient local n’est transféré par cette commande. Pour créer le premier cabinet en ligne, exécuter localement `php artisan cabinet:install --env=aiven` : le nom, l’e-mail et le mot de passe administrateur sont demandés dans le terminal. Il n’existe aucun compte par défaut sur cette nouvelle base. Les futures migrations sont à appliquer explicitement avant un déploiement compatible ; le conteneur ne les exécute pas automatiquement.
+
+**Préparation en cours, pas encore déployée ni validée sur Render.** Docker n’est pas disponible sur cette machine pour construire l’image. Avant publication, choisir et configurer un stockage externe privé pour les documents : Render gratuit efface son disque aux redémarrages et ne propose pas de disque persistant. La version actuelle stocke encore ses documents sur disque local ; elle ne doit pas recevoir de fichiers à conserver sur Render. Les sauvegardes planifiées sur l’ordinateur ne sauvegardent pas automatiquement Aiven. Les e-mails et le planificateur de tâches doivent également être adaptés : la boîte de test est désactivée en production et les ports SMTP habituels sont bloqués sur Render gratuit.
+
+Documentation : [Render gratuit](https://render.com/docs/free), [variables et secrets](https://render.com/docs/configure-environment-variables).
+
 ## Installation durable avec Docker et MySQL
 
 Prérequis : Docker Engine avec Compose et Python 3 pour générer les secrets. Docker n’étant pas disponible sur la machine de construction, cette configuration est fournie mais n’a pas été exécutée ici.

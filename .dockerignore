@@ -14,3 +14,9 @@ database/*.sqlite
 .phpunit.cache
 
 bootstrap/cache/*.php
+
+.npmrc
+*.pem
+*.cnf
+*.sql
+*.psyenc
