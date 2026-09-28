@@ -1,18 +1,29 @@
 # Validation effectuée
 
-Mise à jour : 28 septembre 2026.
+Mise à jour : 29 septembre 2026.
 
-## Exécution
+## Contrôles exécutés le 29 septembre 2026
 
-- Laravel 13.33.0 et PHP 8.3.6, dépendances installées et verrouillées.
-- MySQL 8.0.46 permanent via `/run/mysqld/mysqld.sock` ; base applicative et base de tests distinctes.
-- Migrations exécutées sur MySQL et SQLite.
-- **28 tests, 227 assertions réussies sur SQLite le 28 septembre.**
-- La suite MySQL a réussi le 25 septembre : **28 tests, 226 assertions**. Le dernier contrôle ajouté (restauration interdite après anonymisation) est validé sur SQLite. La base MySQL temporaire de tests n’est plus disponible le 28 septembre ; aucun test destructif n’a été lancé sur la base applicative.
-- Formatage PHP : Laravel Pint, vérification réussie.
-- Syntaxe PHP : application, migrations, routes et vues compilées vérifiées sans erreur.
-- Vues Blade : compilation réussie.
-- JavaScript : `node --check public/assets/app.js` réussi.
+| Contrôle | Résultat et portée |
+|---|---|
+| `php artisan test --compact` | **28 tests, 227 assertions réussies**, SQLite en mémoire, 4,29 s. Aucun test destructif sur Aiven ou la base locale applicative. |
+| Syntaxe PHP (`php -l`) | 63 fichiers valides dans app, bootstrap (hors cache), config, database, routes et tests. |
+| `php artisan view:cache` | Compilation Blade réussie ; ne prouve pas le rendu graphique dans un navigateur. |
+| `node --check public/assets/app.js` | Syntaxe JavaScript valide ; pas d’exécution navigateur. |
+| `sh -n docker/entrypoint.sh` | Syntaxe shell valide ; le conteneur et ses commandes système n’ont pas été exécutés. |
+| Lecture de `render.yaml` avec Symfony YAML | Fichier analysable, service Docker et plan `free` confirmés. Pas de validation par l’API Render ni par son schéma complet. |
+| `git check-ignore` | `.env`, `.env.aiven`, `.env.render` et le certificat privé sont ignorés. |
+| Connexion PDO à Aiven | Connexion réussie avec CA fourni, vérification du certificat serveur activée et chiffrement TLS constaté. Requêtes de lecture uniquement. |
+| Inventaire Aiven | 28 tables, 5 migrations enregistrées, 1 cabinet, 1 utilisateur et 0 dossier patient. Aucun identifiant personnel ni secret affiché dans le compte rendu. |
+
+Le compte Aiven a été créé par l’utilisateur avec `cabinet:install --env=aiven`, qui a annoncé sa réussite. L’inventaire confirme la présence du compte ; son mot de passe et sa connexion au portail n’ont pas été testés.
+
+## Validations antérieures, non réexécutées intégralement aujourd’hui
+
+- Laravel 13.33.0 et PHP 8.3.6 ; dépendances verrouillées. Version Laravel confirmée par Composer lors de la préparation Render.
+- Le 25 septembre, **28 tests et 226 assertions** ont réussi sur une base MySQL 8.0 isolée. L’assertion ajoutée ensuite (restauration interdite après anonymisation) est validée sur SQLite. La base MySQL temporaire de tests était indisponible le 28 septembre ; cette suite n’a pas été relancée sur MySQL aujourd’hui.
+- Les cinq migrations ont réussi sur la base Aiven MySQL 8.4 lors de sa préparation. L’inventaire a été revérifié aujourd’hui ; les tests fonctionnels complets n’ont pas été exécutés sur MySQL 8.4.
+- Laravel Pint a été exécuté lors des modifications PHP précédentes. La présente mise à jour ne modifie que la documentation.
 
 ## Scénarios couverts
 
@@ -45,7 +56,7 @@ Mise à jour : 28 septembre 2026.
 
 Plusieurs scénarios sont réunis dans un même test fonctionnel.
 
-## Sauvegardes et exploitation locale
+## Sauvegardes et exploitation locale — contrôles antérieurs
 
 - Services MySQL, psychoevaluation et cron actifs le 28 septembre ; page de connexion HTTP 200.
 - Planificateur Laravel présent dans la crontab utilisateur ; sauvegarde quotidienne à 2 h, heure de Kampala, lorsque la machine est allumée.
@@ -53,14 +64,31 @@ Plusieurs scénarios sont réunis dans un même test fonctionnel.
 - Restauration réelle testée le 25 septembre dans une nouvelle base isolée : 28 tables importées, déchiffrement des contenus applicatifs réussi, copie de contrôle supprimée ensuite.
 - Conservation des archives locales trente jours. Aucune copie hors machine configurée.
 
-## Vérification HTTP réelle
+## Vérification HTTP réelle — contrôles antérieurs
 
-Connexion au serveur PHP avec le compte fictif administrateur, redirection vers le tableau de bord, pages patients/évaluations/questionnaires/agenda/messagerie/documents/administration, consultation de passations et téléchargement d’un fichier PDF réel : réponses HTTP 200. Une mutation sans jeton CSRF reçoit HTTP 419.
+Lors des vérifications locales des 25–28 septembre : connexion au serveur PHP avec le compte fictif administrateur, redirection vers le tableau de bord, pages patients/évaluations/questionnaires/agenda/messagerie/documents/administration, consultation de passations et téléchargement d’un fichier PDF réel : réponses HTTP 200. Une mutation sans jeton CSRF reçoit HTTP 419.
 
 ## Limites de validation
 
 - Aucun navigateur n’est connecté à l’outil de contrôle visuel de cette session : pas de capture d’écran ni de vérification graphique sur téléphone. Les media queries et le HTML sont présents, mais le rendu visuel responsive reste à contrôler dans un navigateur.
 - Le comportement JavaScript d’auto-sauvegarde est vérifié syntaxiquement ; les routes et verrouillages sont testés côté serveur. Pas de test E2E navigateur ni de test de charge/concurrence multi-utilisateur.
-- La configuration Docker / MySQL 8.4 n’a pas été exécutée, Docker étant absent. MySQL 8.0 a été utilisé directement pour les tests.
+- Docker est absent : aucune image construite, aucun démarrage du conteneur vérifié. Aiven MySQL 8.4 a reçu les migrations et passé le contrôle TLS, mais cela ne constitue pas un test de l’image Docker ni de Render.
 - Aucun appel vers un fournisseur IA réel, aucun e-mail externe ni aucune synchronisation calendrier.
 - Tests techniques uniquement : pas de validation des instruments psychométriques, ni audit de conformité ou de sécurité externe.
+
+
+## Ce qui reste à vérifier ou implémenter
+
+- Intégration d’un stockage privé persistant pour documents et pièces jointes ; le disque local utilisé actuellement ne convient pas à leur conservation sur Render gratuit.
+- Publication des changements sur GitHub, secrets Render, construction et déploiement réels. Le dernier push tenté depuis cette session a échoué faute d’authentification ; aucun déploiement Render n’est attesté.
+- Recette HTTPS/proxy, authentification du compte Aiven, sessions, PDF et téléchargements signés sur le futur site.
+- Sauvegarde/restauration distante complète (Aiven, documents et clés), copie hors machine et tâches planifiées distantes.
+- Tests navigateur ordinateur/mobile, comportements JavaScript et charge/concurrence.
+- Référentiels autorisés et validation métier/clinique des questionnaires.
+
+## Ce qui est reporté
+
+- Activation et test d’un fournisseur IA réel ; les tests de l’adaptateur utilisent des réponses simulées. Les autres assistants IA spécialisés ne sont pas implémentés.
+- Envoi d’e-mails externes, reporté par l’utilisateur : aucun envoi réel validé. La boîte locale de test est indisponible en production ; aucun transport adapté aux restrictions SMTP de Render gratuit n’est configuré.
+- Synchronisations Google/Outlook et locale/distante non implémentées ; aucun calendrier de livraison défini.
+- Audit externe de sécurité/conformité et certification clinique non réalisés.

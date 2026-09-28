@@ -1,5 +1,7 @@
 # Architecture et couverture
 
+État vérifié le 29 septembre 2026.
+
 ## Périmètre
 
 Le document d’audit est utilisé comme description des besoins, pas comme une source de commandes à exécuter. L’application est reconstruite avec Laravel ; aucun ancien code Base44 ni aucune donnée personnelle historique n’a été importé.
@@ -71,7 +73,7 @@ La soumission verrouille le dossier et la passation dans une transaction ; le re
 | CRM, portails, questionnaires, suivi, consentement | Parcours opérationnels décrits dans le README |
 | Gordon | Moteur et validation de grille opérationnels ; référentiel réel à importer |
 | Ennéagramme / besoins | Structures opérationnelles ; textes originaux absents, démos étiquetées |
-| IA d’interprétation | Adaptateur optionnel, tests simulés, pas d’appel réel ni de clé fournie |
+| IA d’interprétation | Adaptateur optionnel, appels simulés dans les tests ; intégration avec un fournisseur réel non validée |
 | IA comparateur / conception / courriers | Travail manuel disponible ; automatisations IA spécialisées non implémentées |
 | Graphiques | Barres, radars individuels/comparatifs et courbes chronologiques ; historique patient limité aux restitutions publiées |
 | PDF individuel, courrier, comparaison | Exports réels avec identité et logo JPEG du cabinet, graphiques selon le rapport |
@@ -82,3 +84,37 @@ La soumission verrouille le dossier et la passation dans une transaction ; le re
 | Référentiels et validation clinique | Import prêt ; textes et autorisations authentiques restent à fournir par le cabinet |
 
 Les restaurations de dossier ne réactivent pas silencieusement un accès : l’administrateur décide de réactiver le compte. La création de comptes, l’activation/désactivation, l’édition de rôle, les invitations et la récupération du mot de passe sont disponibles. Les messages d’accès passent par la boîte locale privée ; aucun fournisseur réel n’est configuré. Les sessions sont révoquées après modification des droits ou du mot de passe.
+
+
+## Installation locale et préparation de l’hébergement
+
+Deux bases distinctes existent ; aucune synchronisation n’est implémentée :
+
+- **Locale** : `.env` conserve MySQL système et les données de la démonstration. La préparation Aiven n’a pas remplacé cette configuration.
+- **Aiven** : `.env.aiven` permet les opérations depuis cette machine sur MySQL distant. Les cinq migrations ont été appliquées : 28 tables. Le 29 septembre, un contrôle en lecture seule avec vérification du certificat TLS constate un cabinet, un compte utilisateur et aucun dossier patient. L’utilisateur a exécuté `cabinet:install --env=aiven` et signalé sa réussite. La connexion interactive au portail avec ce compte n’a pas été testée.
+
+Les paramètres `.env`, `.env.aiven`, `.env.render` et le certificat sous `storage/app/private` sont exclus de Git ; les fichiers d’environnement et fichiers privés sont aussi exclus du contexte Docker. Aucune clé ni aucun mot de passe ne doit être ajouté aux documents ou au dépôt. La clé APP_KEY préparée pour Render est conservée pour permettre le déchiffrement ; elle n’est pas régénérée au démarrage.
+
+### Ce qui est implémenté pour Render
+
+- `render.yaml` décrit un service web Docker, plan `free`, branche `main`, région `frankfurt`, contrôle de santé `/up` et paramètres secrets à renseigner.
+- `docker/entrypoint.sh` adapte Apache à `PORT`, utilise `RENDER_EXTERNAL_URL` lorsque `APP_URL` est absent et décode `AIVEN_CA_BASE64` dans un fichier privé. Il vérifie que le certificat est lisible et fournit son chemin à PDO via `MYSQL_ATTR_SSL_CA`.
+- La configuration prévoit des sessions chiffrées en base, un cookie sécurisé, le cache en base et les journaux sur stderr. L’IA est désactivée dans le Blueprint.
+- Les migrations et la création du cabinet restent des opérations explicites. Aucun import de dossiers locaux ni création de comptes de démonstration n’est effectué au démarrage du conteneur.
+
+Le contrôle YAML et la syntaxe shell ont réussi, mais **cela ne valide pas un déploiement**. Docker n’est pas disponible sur cette machine ; ni la construction de l’image ni l’exécution Apache dans le conteneur n’ont été testées. Aucun site Render accessible n’a été vérifié. Le dernier envoi GitHub tenté depuis cette session a échoué faute d’authentification ; la présence des changements Render sur la branche distante n’est pas confirmée.
+
+### Ce qui reste avant publication
+
+1. **Documents persistants** : choisir et intégrer un stockage privé durable. Les opérations documentaires utilisent encore `Storage::disk('local')` ; la présence d’une configuration S3 ne constitue pas une intégration opérationnelle. Render gratuit ne conserve pas les fichiers locaux aux redémarrages. Ne pas y déposer de documents à conserver dans cet état.
+2. **Déploiement réel** : envoyer les changements GitHub, configurer les secrets Render, construire l’image et vérifier démarrage, HTTPS, authentification, sessions, permissions, PDF et liens signés derrière le proxy.
+3. **Exploitation distante** : définir la sauvegarde/restauration de la base Aiven, du futur stockage documentaire et des clés. La crontab locale sauvegarde la base définie dans `.env`, pas automatiquement celle de `.env.aiven`. Aucun planificateur ni worker distant n’a été déployé.
+4. **Recette visuelle** : contrôler les parcours ordinateur/mobile et l’auto-sauvegarde dans un navigateur ; aucun test E2E ni test de charge réalisé.
+5. **Questionnaires réels** : obtenir les textes, grilles et autorisations nécessaires puis valider leur import. Les contenus de démonstration ne sont pas des référentiels validés.
+
+### Éléments reportés ou non implémentés
+
+- Fournisseur IA réel et aides IA spécialisées aux courriers, comparaisons et questions : activation reportée pendant la préparation de l’hébergement.
+- E-mails externes : configuration reportée par l’utilisateur. La boîte de test est limitée à local/testing ; elle ne fonctionnera pas avec `APP_ENV=production`. Le transport SMTP générique existe mais n’a pas été testé avec un fournisseur et les restrictions réseau de Render gratuit nécessitent une solution adaptée.
+- Synchronisation Google/Outlook et synchronisation des bases locale/distante : non implémentées.
+- Copie des sauvegardes hors machine, audit externe et validation clinique : non réalisés. Les tests techniques ne constituent pas une certification.
