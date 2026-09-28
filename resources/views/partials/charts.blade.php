@@ -1,0 +1,1 @@
+@php($radar=\App\Services\Charts::radar($series,$maximum)) @if($radar)<figure class="chart-figure"><img src="{{ \App\Services\Charts::dataUri($radar) }}" alt="Radar des scores : les valeurs détaillées sont disponibles dans les tableaux"><figcaption>Les axes représentent les dimensions, de 0 à {{ $maximum }}. Aucun diagnostic n’est déduit du graphique.</figcaption></figure>@endif

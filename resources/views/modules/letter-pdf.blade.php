@@ -1,0 +1,4 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><style>body{font-family:DejaVu Sans,sans-serif;color:#233b38;font-size:12px;line-height:1.8}header{border-bottom:2px solid #17675a;margin-bottom:40px}article{white-space:pre-wrap}footer{margin-top:60px;font-size:10px}</style></head><body>
+@include('partials.pdf-brand')
+<header><h2>{{ $cabinet->name }}</h2><p>{{ $cabinet->address }}<br>{{ $cabinet->email }}</p></header><p>{{ $letter->client->full_name }}<br>{{ $letter->created_at->format('d/m/Y') }}</p><h2>{{ $letter->subject }}</h2><article>{{ $letter->body }}</article><h3>Pièces jointes</h3>@forelse($letter->attachments as $document)<p>{{ $document->name }}</p>@empty<p>Aucune</p>@endforelse
+<footer>Document confidentiel · {{ $cabinet->name }}</footer></body></html>

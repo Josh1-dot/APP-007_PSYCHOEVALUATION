@@ -1,0 +1,1 @@
+@if($cabinet->logoDataUri())<img src="{{ $cabinet->logoDataUri() }}" alt="Logo du cabinet" style="max-width:150px;max-height:70px;object-fit:contain">@endif

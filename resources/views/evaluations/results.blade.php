@@ -1,0 +1,3 @@
+@if(isset($results['scores']))<p class="muted">{{ $results['method'] ?? 'Nombre de réponses affirmatives par dimension.' }}</p><div class="score-grid">@foreach($results['scores'] as $dimension=>$score)<div class="score-card"><span>{{ $dimension }}</span><strong>{{ $score }}<small>/ {{ $results['maximum'] }}</small></strong><div class="progress-track"><div class="progress-fill teal" style="width:{{ max(0,min(100,$score/$results['maximum']*100)) }}%"></div></div></div>@endforeach</div>
+@include('partials.charts',['series'=>['Scores'=>$results['scores']],'maximum'=>$results['maximum']])
+@else<p>Réponses textuelles ou auto-évaluations : aucun score automatique n’est calculé.</p>@endif

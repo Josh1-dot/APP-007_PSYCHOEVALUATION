@@ -1,0 +1,1 @@
+<span class="badge {{ $status }}">{{ ['en_cours'=>'En cours','termine'=>'À réviser','publie'=>'Publié','actif'=>'Actif','planifie'=>'Planifié','annule'=>'Annulé'][$status] ?? $status }}</span>
