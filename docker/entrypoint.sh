@@ -26,25 +26,5 @@ if [ "${1:-}" = "apache2-foreground" ]; then
     sed -ri "s/<VirtualHost \*:[0-9]+>/<VirtualHost *:$server_port>/" /etc/apache2/sites-available/000-default.conf
 fi
 
-
-echo "=== RENDER TLS DIAGNOSTIC ==="
-php --version | head -n 1
-php -i | grep -E "Client API library version|mysqlnd => enabled|OpenSSL Library Version|Native OpenSSL support" || true
-php -r 'echo "pdo_mysql loaded: ".(extension_loaded("pdo_mysql") ? "YES" : "NO").PHP_EOL;'
-
-if [ -n "${MYSQL_ATTR_SSL_CA:-}" ]; then
-    echo "MYSQL_ATTR_SSL_CA defined: YES"
-    if [ -r "$MYSQL_ATTR_SSL_CA" ]; then
-        echo "CA readable: YES"
-        sha256sum "$MYSQL_ATTR_SSL_CA"
-        openssl x509 -in "$MYSQL_ATTR_SSL_CA" -noout -subject -issuer -dates
-    else
-        echo "CA readable: NO"
-    fi
-else
-    echo "MYSQL_ATTR_SSL_CA defined: NO"
-fi
-echo "=== END RENDER TLS DIAGNOSTIC ==="
-
 chown -R www-data:www-data storage bootstrap/cache
 exec docker-php-entrypoint "$@"

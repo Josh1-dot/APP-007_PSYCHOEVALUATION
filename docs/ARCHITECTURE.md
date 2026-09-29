@@ -86,12 +86,12 @@ La soumission verrouille le dossier et la passation dans une transaction ; le re
 Les restaurations de dossier ne réactivent pas silencieusement un accès : l’administrateur décide de réactiver le compte. La création de comptes, l’activation/désactivation, l’édition de rôle, les invitations et la récupération du mot de passe sont disponibles. Les messages d’accès passent par la boîte locale privée ; aucun fournisseur réel n’est configuré. Les sessions sont révoquées après modification des droits ou du mot de passe.
 
 
-## Installation locale et préparation de l’hébergement
+## Installation locale et hébergement Render + Aiven
 
 Deux bases distinctes existent ; aucune synchronisation n’est implémentée :
 
 - **Locale** : `.env` conserve MySQL système et les données de la démonstration. La préparation Aiven n’a pas remplacé cette configuration.
-- **Aiven** : `.env.aiven` permet les opérations depuis cette machine sur MySQL distant. Les cinq migrations ont été appliquées : 28 tables. Le 29 septembre, un contrôle en lecture seule avec vérification du certificat TLS constate un cabinet, un compte utilisateur et aucun dossier patient. L’utilisateur a exécuté `cabinet:install --env=aiven` et signalé sa réussite. La connexion interactive au portail avec ce compte n’a pas été testée.
+- **Aiven** : `.env.aiven` permet les opérations depuis cette machine sur MySQL distant. Les cinq migrations ont été appliquées : 28 tables. Le 29 septembre, un contrôle en lecture seule avec vérification du certificat TLS constate un cabinet, un compte utilisateur et aucun dossier patient. L’utilisateur a exécuté `cabinet:install --env=aiven` et signalé sa réussite. Le passage de relais utilisateur confirme ensuite une authentification administrateur et un tableau de bord fonctionnels en production ; ces deux actions n’ont pas été rejouées par l’agent.
 
 Les paramètres `.env`, `.env.aiven`, `.env.render` et le certificat sous `storage/app/private` sont exclus de Git ; les fichiers d’environnement et fichiers privés sont aussi exclus du contexte Docker. Aucune clé ni aucun mot de passe ne doit être ajouté aux documents ou au dépôt. La clé APP_KEY préparée pour Render est conservée pour permettre le déchiffrement ; elle n’est pas régénérée au démarrage.
 
@@ -102,13 +102,23 @@ Les paramètres `.env`, `.env.aiven`, `.env.render` et le certificat sous `stora
 - La configuration prévoit des sessions chiffrées en base, un cookie sécurisé, le cache en base et les journaux sur stderr. L’IA est désactivée dans le Blueprint.
 - Les migrations et la création du cabinet restent des opérations explicites. Aucun import de dossiers locaux ni création de comptes de démonstration n’est effectué au démarrage du conteneur.
 
-Le contrôle YAML et la syntaxe shell ont réussi, mais **cela ne valide pas un déploiement**. Docker n’est pas disponible sur cette machine ; ni la construction de l’image ni l’exécution Apache dans le conteneur n’ont été testées. Aucun site Render accessible n’a été vérifié. Le dernier envoi GitHub tenté depuis cette session a échoué faute d’authentification ; la présence des changements Render sur la branche distante n’est pas confirmée.
+### État du déploiement vérifié le 29 septembre 2026
 
-### Ce qui reste avant publication
+Le site [Render](https://app-007-psychoevaluation.onrender.com) répond : `/up` et `/connexion` renvoient HTTP 200, et `/` conduit à la connexion. Les fichiers `/assets/app.css` et `/assets/app.js` sont accessibles en HTTPS (HTTP 200) et leurs empreintes correspondent aux fichiers du dépôt. La page publique référence la CSS par un chemin relatif, résolu en HTTPS. Elle ne charge pas le JavaScript du tableau de bord : son exécution et le HTML authentifié en production restent à contrôler dans un navigateur.
 
-1. **Documents persistants** : choisir et intégrer un stockage privé durable. Les opérations documentaires utilisent encore `Storage::disk('local')` ; la présence d’une configuration S3 ne constitue pas une intégration opérationnelle. Render gratuit ne conserve pas les fichiers locaux aux redémarrages. Ne pas y déposer de documents à conserver dans cet état.
-2. **Déploiement réel** : envoyer les changements GitHub, configurer les secrets Render, construire l’image et vérifier démarrage, HTTPS, authentification, sessions, permissions, PDF et liens signés derrière le proxy.
-3. **Exploitation distante** : définir la sauvegarde/restauration de la base Aiven, du futur stockage documentaire et des clés. La crontab locale sauvegarde la base définie dans `.env`, pas automatiquement celle de `.env.aiven`. Aucun planificateur ni worker distant n’a été déployé.
+Le relais utilisateur confirme le déploiement, la connexion Render → Aiven chiffrée après remplacement du certificat CA, puis la connexion administrateur et le tableau de bord. Le certificat local a l’empreinte SHA-256 PEM annoncée dans ce relais. Ces contrôles manuels sont distingués des requêtes publiques et tests locaux exécutés par l’agent. La branche GitHub `main` a été vérifiée à `d277679` avant le présent nettoyage. L’image Docker n’a pas été reconstruite localement.
+
+La correction `trustProxies(at: '*')` dans `bootstrap/app.php` est conservée. [Laravel 13 documente cette configuration](https://laravel.com/docs/13.x/requests#configuring-trusted-proxies) pour les proxys cloud dont les adresses ne sont pas connues ; [Render termine le TLS et transmet en HTTP](https://render.com/docs/web-services#connecting-from-the-public-internet). Les en-têtes transmis permettent à Laravel de reconnaître HTTPS. Les tests simulent cette traversée pour le tableau de bord et un téléchargement signé, et couvrent aussi HTTP local. Le joker suppose une entrée réseau de confiance ; il ne protège pas un serveur d’origine exposé directement à des en-têtes transmis arbitraires. Cette configuration est à réexaminer en cas de changement d’hébergement.
+
+Le bloc temporaire `RENDER TLS DIAGNOSTIC` est retiré de l’entrypoint. Le décodage du CA, sa validation OpenSSL et `MYSQL_ATTR_SSL_CA` sont conservés. Aucune configuration TLS Aiven ni architecture fonctionnelle n’est modifiée.
+
+**Écart de configuration constaté en production :** le cookie de session porte `HttpOnly` et `SameSite=Lax`, mais pas `Secure`. Le Blueprint prévoit pourtant `SESSION_SECURE_COOKIE=true` : il faut vérifier cette variable dans le service Render effectivement créé, redéployer puis contrôler le cookie reçu. Le Blueprint ne prouve pas la configuration effective d’un service créé manuellement.
+
+### Ce qui reste pour valider complètement la production
+
+1. **Configuration et recette** : corriger l’attribut `Secure`, contrôler les paramètres effectifs Render (`APP_ENV=production`, `APP_DEBUG=false`, `APP_URL` HTTPS), puis vérifier les assets du tableau de bord connecté, les sessions, permissions, PDF et liens signés sur le site. Le nettoyage de l’entrypoint doit encore être publié et déployé.
+2. **Documents persistants** : choisir et intégrer un stockage privé durable. Les opérations documentaires utilisent encore `Storage::disk('local')` ; la configuration S3 seule ne constitue pas une intégration. Render gratuit ne conserve pas les fichiers locaux aux redémarrages. Ne pas y déposer de documents à conserver dans cet état.
+3. **Exploitation distante** : définir et tester la sauvegarde/restauration de la base Aiven, du futur stockage documentaire et des clés. La crontab locale sauvegarde la base définie dans `.env`, pas automatiquement celle de `.env.aiven`. Aucun planificateur ni worker distant n’est attesté.
 4. **Recette visuelle** : contrôler les parcours ordinateur/mobile et l’auto-sauvegarde dans un navigateur ; aucun test E2E ni test de charge réalisé.
 5. **Questionnaires réels** : obtenir les textes, grilles et autorisations nécessaires puis valider leur import. Les contenus de démonstration ne sont pas des référentiels validés.
 
