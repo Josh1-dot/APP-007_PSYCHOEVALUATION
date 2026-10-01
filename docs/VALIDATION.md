@@ -28,7 +28,15 @@ Chiffrement du champ vérifié en base, historique exclu de toArray, affichage �
 
 `2026_10_01_160120_add_ai_generations_to_interpretations_table.php` ajoute une colonne nullable, sans backfill ni modification des anciennes migrations. Test sur schéma préexistant et ligne ancienne : valeurs chiffrées et champs historiques inchangés, original inconnu conservé comme inconnu ; une nouvelle génération crée seulement son propre enregistrement. Ce test a d’abord révélé une comparaison de l’objet créé sans relecture des valeurs par défaut ; l’assertion a été corrigée pour comparer la ligne réellement persistée avant/après. Résultats ci-dessus obtenus après correction.
 
-Migration non exécutée sur Aiven, MySQL 8.4 isolé non testé, concurrence réelle non testée. Pas de déploiement/push. Aucun modèle fournisseur/version réel validé. L’historique technique n’archive pas toutes les révisions humaines et ne reconstitue pas les sorties anciennes déjà perdues. Les assistants IA spécialisés restent non implémentés. **009 passe de CONTRADICTS à PARTIAL, pas DONE ; 010 conserve son workflow.** Les sections suivantes décrivent la baseline historique avant cette correction.
+**Validation de déploiement communiquée par le propriétaire après le commit `0d2deb0` :**
+
+- `php artisan migrate --env=aiven` exécuté avec succès.
+- Migration `2026_10_01_160120_add_ai_generations_to_interpretations_table` appliquée sur Aiven en **batch 2** ; `php artisan migrate:status --env=aiven` confirme **[2] Ran**.
+- Commit `0d2deb0` poussé sur `main` ; Render a redéployé cette version avec le statut **Deploy succeeded**.
+
+Ces opérations ont été effectuées par le propriétaire et ne sont pas rejouées lors de cette mise à jour documentaire. Elles confirment l’application de la migration et le déploiement, pas une exécution des tests fonctionnels sur MySQL ni un appel fournisseur réel. Diff documentaire vérifié ; tests applicatifs non relancés, aucun comportement modifié.
+
+MySQL 8.4 isolé non testé, concurrence réelle non testée. Aucun modèle fournisseur/version réel validé. L’historique technique n’archive pas toutes les révisions humaines et ne reconstitue pas les sorties anciennes déjà perdues. Les assistants IA spécialisés restent non implémentés. **009 passe de CONTRADICTS à PARTIAL, pas DONE ; 010 conserve son workflow.** Les sections suivantes décrivent la baseline historique avant cette correction.
 
 ## Audit de convergence Spec Kit — 1 octobre 2026
 
