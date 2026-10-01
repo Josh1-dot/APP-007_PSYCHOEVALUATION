@@ -1,6 +1,6 @@
 # Architecture et couverture
 
-État vérifié le 29 septembre 2026.
+État documentaire actualisé le 1 octobre 2026 ; audit détaillé dans [SPEC-CONVERGENCE.md](SPEC-CONVERGENCE.md). Les validations historiques restent datées ci-dessous.
 
 ## Périmètre
 
@@ -33,8 +33,8 @@ Les employés d’une organisation ne donnent **pas** accès à leurs évaluatio
 - `UserInvitation`, `LocalMail`, `PrivacyRequest` : invitations à usage unique, boîte de test chiffrée, demandes et réponses relatives aux droits.
 - `Consent` : texte, version, acceptation, retrait. Le retrait ne supprime pas les données historiques.
 - `AssessmentDefinition` : famille UUID, version, type, questions, dimensions et règles associées, version de moteur.
-- `Assessment` : référence immuable à une version, réponses et résultat instantané chiffrés, dates et statut.
-- `Interpretation` : brouillon, source, modèle, prompt, entrée structurée, contenu publié distinct, validateur et date.
+- `Assessment` : référence à une ligne de définition versionnée, réponses et résultat instantané chiffrés, dates et statut. Le parcours HTTP crée de nouvelles versions ; le modèle/base ne bloque pas une mise à jour interne de la ligne historique.
+- `Interpretation` : brouillon, source, modèle, version de prompt, entrée structurée, contenu publié distinct, validateur et date. Une seule ligne par passation : le contenu IA original est remplacé lors d’une édition du brouillon ou d’une régénération ; aucun historique des générations n’est conservé. Cet écart contredit la conservation demandée par la spec 009 et doit être traité séparément.
 - `ClinicalNote`, `Appointment`, `Message`, `Document`, `Letter`, `WorkspaceDocument`, `Comparison`, `AuditLog` : suivi et traçabilité.
 
 Les évaluations Gordon/Ennéagramme, tests personnalisés et questionnaires de besoins sont unifiés dans le modèle versionné. Les dimensions et scores sont des structures JSON versionnées dans la définition et le résultat ; ils ne sont pas dupliqués dans des tables `Dimension` ou `Score` séparées.
@@ -112,11 +112,11 @@ La correction `trustProxies(at: '*')` dans `bootstrap/app.php` est conservée. [
 
 Le bloc temporaire `RENDER TLS DIAGNOSTIC` est retiré de l’entrypoint. Le décodage du CA, sa validation OpenSSL et `MYSQL_ATTR_SSL_CA` sont conservés. Aucune configuration TLS Aiven ni architecture fonctionnelle n’est modifiée.
 
-**Écart de configuration constaté en production :** le cookie de session porte `HttpOnly` et `SameSite=Lax`, mais pas `Secure`. Le Blueprint prévoit pourtant `SESSION_SECURE_COOKIE=true` : il faut vérifier cette variable dans le service Render effectivement créé, redéployer puis contrôler le cookie reçu. Le Blueprint ne prouve pas la configuration effective d’un service créé manuellement.
+**Historique du cookie :** `Secure` manquait lors du contrôle du 29 septembre. Après modification utilisateur, le diagnostic HTTP suivant a confirmé cet attribut actif. Le Blueprint seul ne prouve pas la configuration effective d’un service créé manuellement.
 
 ### Ce qui reste pour valider complètement la production
 
-1. **Configuration et recette** : corriger l’attribut `Secure`, contrôler les paramètres effectifs Render (`APP_ENV=production`, `APP_DEBUG=false`, `APP_URL` HTTPS), puis vérifier les assets du tableau de bord connecté, les sessions, permissions, PDF et liens signés sur le site. Le nettoyage de l’entrypoint doit encore être publié et déployé.
+1. **Configuration et recette** : conserver l’attribut `Secure` constaté, contrôler les paramètres effectifs Render (`APP_ENV=production`, `APP_DEBUG=false`, `APP_URL` HTTPS), puis vérifier les assets du tableau de bord connecté, les sessions, permissions, PDF et liens signés sur le site. Le nettoyage de l’entrypoint doit encore être publié et déployé.
 2. **Documents persistants** : choisir et intégrer un stockage privé durable. Les opérations documentaires utilisent encore `Storage::disk('local')` ; la configuration S3 seule ne constitue pas une intégration. Render gratuit ne conserve pas les fichiers locaux aux redémarrages. Ne pas y déposer de documents à conserver dans cet état.
 3. **Exploitation distante** : définir et tester la sauvegarde/restauration de la base Aiven, du futur stockage documentaire et des clés. La crontab locale sauvegarde la base définie dans `.env`, pas automatiquement celle de `.env.aiven`. Aucun planificateur ni worker distant n’est attesté.
 4. **Recette visuelle** : contrôler les parcours ordinateur/mobile et l’auto-sauvegarde dans un navigateur ; aucun test E2E ni test de charge réalisé.
@@ -128,3 +128,16 @@ Le bloc temporaire `RENDER TLS DIAGNOSTIC` est retiré de l’entrypoint. Le dé
 - E-mails externes : configuration reportée par l’utilisateur. La boîte de test est limitée à local/testing ; elle ne fonctionnera pas avec `APP_ENV=production`. Le transport SMTP générique existe mais n’a pas été testé avec un fournisseur et les restrictions réseau de Render gratuit nécessitent une solution adaptée.
 - Synchronisation Google/Outlook et synchronisation des bases locale/distante : non implémentées.
 - Copie des sauvegardes hors machine, audit externe et validation clinique : non réalisés. Les tests techniques ne constituent pas une certification.
+
+## Écarts de convergence observés le 1 octobre 2026
+
+Le Spec Kit 001–018 a été retrouvé dans une copie externe identifiée dans [SPEC-CONVERGENCE.md](SPEC-CONVERGENCE.md), pas dans le dépôt Laravel. [ROADMAP.md](../ROADMAP.md) et [TRACEABILITY.md](../TRACEABILITY.md) sont établis à partir du code, des tâches source et des tests existants. Aucun comportement fonctionnel changé.
+
+- Organisations : création/lecture ; édition et suppression non implémentées. Notes cliniques : création/lecture ; édition/suppression individuelle absentes, hors effacement global du dossier.
+- Ennéagramme : neuf échelles auto-déclarées, sans migration/lecture des deux structures historiques ni sélection de type dominant ; décisions et sources métier manquantes.
+- Besoins : démo 5 domaines + 22 échelles, sans explications/cas spécifiques par situation ; schéma générique personnalisable, pas référentiel validé.
+- Portail patient : seules les six dernières passations sont affichées au dashboard, sans liste complète accessible au patient. Les URLs connues conservent leur contrôle de propriété.
+- Audit : créations, dossiers consultés, publications et opérations documentaires couverts ; authentification, acceptation/renvoi d’invitation et changement de mot de passe n’émettent pas tous un événement métier. Aucune assertion de contenu AuditLog dans la suite actuelle.
+- Rétention : mécanique de dossier Client testée, mais décision métier de durée et conservation des documents entreprise/non rattachés non attestées. Le journal n’est pas inviolable ; l’audit de convergence ne constitue pas un audit externe de sécurité.
+
+Disponibilité : après l’incident Aiven `Powered off` rapporté le 1 octobre, `/up`, `/connexion` et les deux assets répondent à nouveau HTTP 200 pendant l’audit. `/up` peut réussir même si la base est indisponible. Aucune authentification administrateur ni vérification TLS Render → Aiven rejouée dans cette mission ; les validations antérieures restent des preuves historiques, pas une garantie de disponibilité continue.

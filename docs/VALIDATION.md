@@ -1,6 +1,25 @@
 # Validation effectuée
 
-Mise à jour : 29 septembre 2026.
+Mise à jour : 1 octobre 2026.
+
+## Audit de convergence Spec Kit — 1 octobre 2026
+
+- Lecture des 18 triplets spec/plan/tasks et des trois documents de gouvernance dans la copie externe identifiée dans [SPEC-CONVERGENCE.md](SPEC-CONVERGENCE.md). Ils n’étaient pas présents dans le dépôt Laravel ; leurs empreintes figurent dans l’audit.
+- Code audité : `990f470`. Comparaison statique des modèles, migrations, contrôleurs, services, vues, routes et assertions existantes. Documentation seule modifiée.
+- Livrables contrôlés : 18 sections feature et 97 tâches classées ; liens vers fichiers existants vérifiés. Aucun fichier applicatif modifié. Aucun fichier environnement privé/certificat/clé suivi ; aucun des secrets locaux recherchés (valeurs sensibles d’au moins 12 caractères) retrouvé dans les cinq documents. Vérification ciblée, pas audit exhaustif de secrets inconnus.
+- `composer show --direct` : Laravel 13.33.0, DomPDF wrapper 3.1.2, PHPUnit 12.5.36.
+- `php artisan route:list --except-vendor --no-interaction` : 72 routes applicatives listées.
+- `php artisan test --compact` : **31 tests, 240 assertions réussies, 6,41 s**, SQLite en mémoire. Suite inchangée.
+- Requêtes HTTPS publiques `/up`, `/connexion`, `/assets/app.css`, `/assets/app.js` : **HTTP 200** pendant l’audit. Aucune authentification ni donnée métier de production utilisée. Après l’incident Aiven éteint signalé auparavant, ces réponses attestent un rétablissement public, pas une disponibilité durable ni une nouvelle preuve directe du TLS MySQL.
+- Cookie Secure : constaté actif lors du diagnostic HTTP précédent après modification utilisateur. L’écart daté du 29 septembre ci-dessous est historique et a été corrigé.
+
+### Ce que la suite verte ne démontre pas
+
+Aucun test dédié de répétabilité Gordon, de conversion des anciens formats Ennéagramme, de conservation du contenu IA original après révision/régénération, de stabilité du snapshot comparaison après changement des sources, ni d’assertion des événements AuditLog n’existe. Les tests PDF vérifient principalement réponses/MIME et archive ; ils ne prouvent pas par extraction de texte l’absence de brouillon dans le PDF patient après révision. Les tests nommés « logo inclus » et « export sans scores non publiés » ne vérifient pas respectivement les pixels/logo incorporés et un résultat non publié créé dans ce scénario : leurs assertions ont été lues, leurs noms ne sont pas considérés comme preuve suffisante.
+
+La reprise navigateur, la concurrence MySQL et les lectures croisées agenda/messages/entreprises ne sont pas intégralement couvertes. Aucun test E2E navigateur ou test de charge disponible exécuté ; aucun environnement MySQL 8.4 isolé établi pour cette mission. La suite RefreshDatabase n’est pas lancée contre Aiven applicatif. Aucun fournisseur IA réel, e-mail réel, build Docker local ou restauration distante testé.
+
+Résultat : **010 DONE ; 009 CONTRADICTS ; les 16 autres features PARTIAL**, avec tâches MISSING/BLOCKED détaillées. La contradiction IA est un constat de code (écrasement du champ draft), pas un test nouvellement exécuté. Prochaine tâche recommandée : conservation indépendante de la sortie IA et de ses générations, non implémentée dans cet audit.
 
 ## Contrôles de préparation Aiven du 29 septembre 2026 (avant le relais)
 
@@ -105,7 +124,7 @@ Lors des vérifications locales des 25–28 septembre : connexion au serveur PHP
 
 - Intégration d’un stockage privé persistant pour documents et pièces jointes ; le disque local utilisé actuellement ne convient pas à leur conservation sur Render gratuit.
 - Publier et déployer le présent nettoyage, puis vérifier le démarrage sans diagnostic temporaire. Le premier déploiement est déjà fonctionnel ; il n’est pas à refaire depuis zéro.
-- Corriger `SESSION_SECURE_COOKIE=true` dans Render et vérifier le cookie reçu après redéploiement ; contrôler les valeurs effectives `APP_ENV=production`, `APP_DEBUG=false` et `APP_URL` HTTPS.
+- Conserver le cookie Secure désormais constaté actif ; contrôler les valeurs effectives `APP_ENV=production`, `APP_DEBUG=false` et `APP_URL` HTTPS.
 - Compléter la recette authentifiée du site : assets et console navigateur sans Mixed Content, sessions, permissions, PDF et téléchargements signés. La connexion et le tableau de bord sont confirmés par l’utilisateur ; les contrôles de proxy supplémentaires sont locaux.
 - Sauvegarde/restauration distante complète (Aiven, documents et clés), copie hors machine et tâches planifiées distantes.
 - Tests navigateur ordinateur/mobile, comportements JavaScript et charge/concurrence.
