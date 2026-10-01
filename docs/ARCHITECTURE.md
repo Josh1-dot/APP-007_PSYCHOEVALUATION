@@ -34,7 +34,7 @@ Les employés d’une organisation ne donnent **pas** accès à leurs évaluatio
 - `Consent` : texte, version, acceptation, retrait. Le retrait ne supprime pas les données historiques.
 - `AssessmentDefinition` : famille UUID, version, type, questions, dimensions et règles associées, version de moteur.
 - `Assessment` : référence à une ligne de définition versionnée, réponses et résultat instantané chiffrés, dates et statut. Le parcours HTTP crée de nouvelles versions ; le modèle/base ne bloque pas une mise à jour interne de la ligne historique.
-- `Interpretation` : brouillon, source, modèle, version de prompt, entrée structurée, contenu publié distinct, validateur et date. Une seule ligne par passation : le contenu IA original est remplacé lors d’une édition du brouillon ou d’une régénération ; aucun historique des générations n’est conservé. Cet écart contredit la conservation demandée par la spec 009 et doit être traité séparément.
+- `Interpretation` : draft courant, published_content validé/publié et ai_generations chiffré séparé. Chaque nouvelle génération conserve sa sortie originale intégrale, ses messages d’entrée et métadonnées ; une révision humaine ou régénération ne remplace plus l’original. Les anciennes sorties non conservées restent inconnues.
 - `ClinicalNote`, `Appointment`, `Message`, `Document`, `Letter`, `WorkspaceDocument`, `Comparison`, `AuditLog` : suivi et traçabilité.
 
 Les évaluations Gordon/Ennéagramme, tests personnalisés et questionnaires de besoins sont unifiés dans le modèle versionné. Les dimensions et scores sont des structures JSON versionnées dans la définition et le résultat ; ils ne sont pas dupliqués dans des tables `Dimension` ou `Score` séparées.
@@ -137,7 +137,21 @@ Le Spec Kit 001–018 a été retrouvé dans une copie externe identifiée dans 
 - Ennéagramme : neuf échelles auto-déclarées, sans migration/lecture des deux structures historiques ni sélection de type dominant ; décisions et sources métier manquantes.
 - Besoins : démo 5 domaines + 22 échelles, sans explications/cas spécifiques par situation ; schéma générique personnalisable, pas référentiel validé.
 - Portail patient : seules les six dernières passations sont affichées au dashboard, sans liste complète accessible au patient. Les URLs connues conservent leur contrôle de propriété.
-- Audit : créations, dossiers consultés, publications et opérations documentaires couverts ; authentification, acceptation/renvoi d’invitation et changement de mot de passe n’émettent pas tous un événement métier. Aucune assertion de contenu AuditLog dans la suite actuelle.
+- Audit : créations, dossiers consultés, publications et opérations documentaires couverts ; authentification, acceptation/renvoi d’invitation et changement de mot de passe n’émettent pas tous un événement métier. La nouvelle suite 009 vérifie l’audit de génération IA ; les autres événements restent sans assertions dédiées.
 - Rétention : mécanique de dossier Client testée, mais décision métier de durée et conservation des documents entreprise/non rattachés non attestées. Le journal n’est pas inviolable ; l’audit de convergence ne constitue pas un audit externe de sécurité.
 
 Disponibilité : après l’incident Aiven `Powered off` rapporté le 1 octobre, `/up`, `/connexion` et les deux assets répondent à nouveau HTTP 200 pendant l’audit. `/up` peut réussir même si la base est indisponible. Aucune authentification administrateur ni vérification TLS Render → Aiven rejouée dans cette mission ; les validations antérieures restent des preuves historiques, pas une garantie de disponibilité continue.
+
+## Feature 009 — historique des générations IA
+
+Correction ciblée depuis la baseline e71138c, sans changement des méthodes de révision/publication 010. Une colonne nullable LONGTEXT ajoutée par `2026_10_01_160120_add_ai_generations_to_interpretations_table.php` est castée encrypted:array dans Interpretation et exclue de sa sérialisation générique. Aucun nouveau modèle, relation ou endpoint.
+
+Chaque génération réussie ajoute UUID, date d’enregistrement, demandeur, contenu original, modèle demandé/retourné si disponible, identifiant réponse si disponible, version du prompt, messages exacts envoyés et snapshot expurgé des réponses libres. Aucune clé API ou configuration secrète n’est copiée. Le verrou transactionnel Assessment existant sérialise les écritures ; l’audit interpretation.generee reste dans la même transaction. Le brouillon conserve sa limite de 50000 caractères, l’original reste intégral.
+
+La régénération garde le comportement existant de remplacement du brouillon courant ; elle ajoute son original à l’historique sans changer la publication, sa date ou son validateur. La spec ne définit pas davantage de politique métier : pas d’historique de toutes les éditions humaines, pas de nouvelle durée de rétention et pas de restauration automatique d’un brouillon. La suppression de l’Interpretation par Retention supprime également cet historique. La liste chiffrée est adaptée au périmètre actuel ; elle croît avec les générations et n’est pas un journal SQL inviolable.
+
+Une section de lecture échappée dans l’évaluation est réservée aux admin/psychologues. Les portails patient/entreprise, le conseiller et les exports patient ne reçoivent pas cet historique. Aucun score ni règle psychométrique n’est modifié.
+
+Données anciennes : aucune copie du draft vers un prétendu original. Colonne null jusqu’à une génération effectivement enregistrée. Migration testée sur une ligne préexistante SQLite, pas appliquée à Aiven ; à appliquer via le processus de déploiement avant utilisation de la génération mise à jour. Un rollback de cette migration détruirait uniquement la nouvelle colonne et son historique : conserver le schéma et les données pour un retour de code, ne pas lancer un rollback de données sans sauvegarde.
+
+Statut 009 PARTIAL : workflow interne testé avec réponses simulées ; **fournisseur OpenAI réel NON TESTÉ / BLOQUÉ faute de crédits API**. Aucune clé demandée, aucun appel IA réel. Validation fournisseur ultérieure séparée, hors suite automatisée gratuite.

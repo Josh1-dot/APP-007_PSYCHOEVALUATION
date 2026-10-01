@@ -2,7 +2,7 @@
 
 ## Périmètre et provenance
 
-Code audité : `990f470` sur `main`, dépôt propre au départ. Aucun comportement, test, migration ou paramètre privé modifié. Les 54 fichiers `spec.md`, `plan.md`, `tasks.md` ont été lus avec la constitution, la roadmap et la traçabilité source.
+Baseline de convergence : `e71138c`, auditant le code `990f470`. Les constats des autres features restent ceux de cette baseline. Mise à jour ciblée 009 après implémentation : conservation des générations, migration additive et tests simulés ; aucun paramètre privé modifié. Les 54 fichiers `spec.md`, `plan.md`, `tasks.md` ont été lus avec la constitution, la roadmap et la traçabilité source.
 
 **Le Spec Kit n’existe pas dans le dépôt Laravel audité.** La copie retrouvée et utilisée est `/home/a-joshua/Downloads/SPEC KIT/APP-007-SPEC-KIT-EXERCISE`. Elle se présente comme « exercice fondé sur l’audit APP-007 », constitution 1.0.0. Il s’agit de la référence de cette convergence, pas d’une preuve d’approbation métier officielle. La mission autorise un audit ; les plans sont des exigences à comparer, pas des commandes à exécuter. Les sources externes sont laissées intactes. ROADMAP.md et TRACEABILITY.md sont créés dans le dépôt Laravel à partir de cette référence ; aucun autre exemplaire n’y existait. Les sources restent externes : leur versionnement avec le projet reste à organiser, sans prétendre qu’elles sont déjà livrées dans Git.
 
@@ -32,7 +32,7 @@ Preuves : `W` = `tests/Feature/WorkflowTest.php`, `C` = `tests/Feature/Completio
 | [006 — Scoring Gordon](#feature-006) | **PARTIAL** | Scoring::calculate central, 60 booléens, 15 par dimension, engine gordon-v1 conservé ; aucune IA dans le calcul. | Voir § 006 : méthodes exactes, code et routes dans la traçabilité. | Test de reproductibilité dédié absent ; grille réelle autorisée non fournie. | Ajouter les tests de reproductibilité/bornes puis importer un référentiel autorisé. |
 | [007 — Ennéagramme](#feature-007) | **PARTIAL** | Neuf pourcentages 0..100 validés ; réponses auto-déclarées conservées ; aucun score clinique calculé. | Voir § 007 : méthodes exactes, code et routes dans la traçabilité. | Aucune migration des deux anciens formats, aucun type dominant ; choix métier du format et compatibilité non confirmés. | Décider format canonique, fournir exemples historiques autorisés et décider le traitement des égalités. |
 | [008 — Besoins et tests personnalisés](#feature-008) | **PARTIAL** | Démo besoins : 5 domaines et 22 échelles 0..3 ; questions text/scale/choice ; validation Scoring ; snapshots raw-v1. | Voir § 008 : méthodes exactes, code et routes dans la traçabilité. | Explications/cas spécifiques des situations absents de la démo ; pas de test dédié besoins ni de restitution sans score ; textes officiels absents. | Compléter le format besoins sur une source autorisée, puis les tests par type. |
-| [009 — Interprétation IA](#feature-009) | **CONTRADICTS** | Interpretation et AssessmentController::ai ; génération optionnelle, métadonnées, aucune publication automatique. | Voir § 009 : méthodes exactes, code et routes dans la traçabilité. | La sortie brute IA est écrasée lors de révision/régénération ; pas d’historique des générations ; fournisseur réel non validé ; autres assistants absents. | Conserver séparément sortie IA originale, révisions humaines et métadonnées, sans activer de fournisseur. |
+| [009 — Interprétation IA](#feature-009) | **PARTIAL** | Historique chiffré des sorties IA et métadonnées, distinct du brouillon et de la publication. | AiInterpretationHistoryTest : A → B → publication B → génération C ; données persistées et sécurité. | Fournisseur OpenAI réel BLOCKED / NOT VALIDATED faute de crédits ; assistants spécialisés absents. | Validation fournisseur séparée après disponibilité des crédits, jamais dans la suite automatisée. |
 | [010 — Révision humaine et publication](#feature-010) | **DONE** | interpretation/publish/unpublish ; copie de draft vers published_content après reviewed ; Access::publisher et audit. | Voir § 010 : méthodes exactes, code et routes dans la traçabilité. | Historique intégral des publications non conservé (limite, pas exigence ferme de cette spec) ; assertions de contenu AuditLog absentes. | Conserver ce comportement et étendre ultérieurement les tests de traçabilité. |
 | [011 — Portail patient](#feature-011) | **PARTIAL** | Dashboard filtré Client ; réponses, résultats publiés, documents partagés, messages, agenda, profil. | Voir § 011 : méthodes exactes, code et routes dans la traçabilité. | Dashboard affiche seulement les 6 dernières passations sans liste complète patient ; isolation agenda/messages non couverte par tests dédiés. | Rendre toutes les passations accessibles au patient et couvrir les parcours croisés. |
 | [012 — Portail entreprise](#feature-012) | **PARTIAL** | Dashboard Organization, documents d’organisation sans client_id, messagerie avec professionnels. | Voir § 012 : méthodes exactes, code et routes dans la traçabilité. | Pas de test deux organisations distinctes ni de lecture messagerie entreprise autorisée complète. | Tester deux entreprises du même cabinet et un autre tenant. |
@@ -41,9 +41,9 @@ Preuves : `W` = `tests/Feature/WorkflowTest.php`, `C` = `tests/Feature/Completio
 | [015 — Messagerie et agenda](#feature-015) | **PARTIAL** | Message chiffré par acteurs ; Appointment par Client ; portails filtrés et CRUD partiel selon périmètre demandé. | Voir § 015 : méthodes exactes, code et routes dans la traçabilité. | Tests d’isolation lecture des messages/RDV absents ; synchronisation externe non décidée et non implémentée. | Tester isolation des lectures et envois avant toute intégration externe. |
 | [016 — Comparateur](#feature-016) | **PARTIAL** | Comparison.snapshot chiffré, IDs passations, même version exigée, graphiques et PDF basés sur copie. | Voir § 016 : méthodes exactes, code et routes dans la traçabilité. | Test de stabilité historique absent ; IA comparaison absente, optionnelle ; pas de publication comparaison patient. | Tester snapshot après évolution des données sources et refus versions incompatibles. |
 | [017 — Courriers et PDF](#feature-017) | **PARTIAL** | DomPDF, trois sorties, Charts, Markdown HTML sécurisé, branding, pivot document_letter et ZIP contrôlé. | Voir § 017 : méthodes exactes, code et routes dans la traçabilité. | Tests PDF vérifient surtout HTTP/MIME, pas extraction du contenu prouvant exclusion draft ; rendu PDF mélange filtrage et requêtes dans contrôleurs. | Tester le contenu PDF patient après révision privée et les données autorisées. |
-| [018 — Audit, rétention et sécurité](#feature-018) | **PARTIAL** | AuditLog, scopes, Access, Retention, Backups, chiffrement, URLs signées et workflow verrouillé. | Voir § 018 : méthodes exactes, code et routes dans la traçabilité. | Journal incomplet/non testé ; politique métier non validée ; tests croisés non exhaustifs et stockage durable absent ; reproduction IA contredite (009). | Traiter en priorité 009 conservation IA, puis audit/rétention et recette transverse. |
+| [018 — Audit, rétention et sécurité](#feature-018) | **PARTIAL** | AuditLog, scopes, Access, Retention, Backups, chiffrement, URLs signées et workflow verrouillé. | Voir § 018 : méthodes exactes, code et routes dans la traçabilité. | Journal incomplet/non testé ; politique métier non validée ; tests croisés non exhaustifs et stockage durable absent ; conservation IA corrigée dans 009, fournisseur réel non validé. | Compléter ultérieurement audit/rétention et recette transverse ; fournisseur 009 réel bloqué. |
 
-**Bilan : 1 DONE (010), 16 PARTIAL, 1 CONTRADICTS (009).** Aucune feature entière n’est absente ; les `MISSING`/`BLOCKED` concernent des sous-tâches détaillées. Ce bilan exigeant n’annule pas les parcours déjà opérationnels.
+**Bilan actualisé : 1 DONE (010), 17 PARTIAL. La contradiction 009 de la baseline e71138c est corrigée pour les nouvelles générations ; 009 reste PARTIAL.** Aucune feature entière n’est absente ; les `MISSING`/`BLOCKED` concernent des sous-tâches détaillées. Ce bilan exigeant n’annule pas les parcours déjà opérationnels.
 
 ## Résultats des contrôles exécutés
 
@@ -61,7 +61,7 @@ L’incident du 1 octobre (500, Aiven affiché `Powered off` par l’utilisateur
 
 ## Écarts prioritaires et principes non négociables
 
-1. **CONTRADICTS — 009, conservation du contenu IA** : `ai()` écrit directement dans `draft` via `updateOrCreate`; `interpretation()` remplace ce même champ et une régénération remplace aussi les métadonnées. La sortie initiale n’est plus disponible. La publication reste humaine ; cette contradiction porte sur l’historique/reproductibilité, pas sur une publication autonome.
+1. **009 — contradiction corrigée, PARTIAL** : chaque génération réussie est ajoutée à `Interpretation.ai_generations` chiffré ; édition humaine et publication ne modifient pas ce champ. Les anciennes sorties perdues restent inconnues. La validation fournisseur OpenAI réel reste **BLOCKED / NOT VALIDATED — crédits API OpenAI indisponibles**.
 2. **PARTIAL — 003, immutabilité** : le parcours HTTP crée une nouvelle ligne et préserve la référence des passations ; le modèle n’interdit pas une mise à jour interne de la ligne ancienne. Pas de preuve d’une mutation passée ni d’un accès HTTP permettant cette mutation.
 3. **MISSING — 002/013** : édition/suppression d’organisation et de note individuelle absentes, contrairement au CRUD demandé par les tâches. L’archivage Client et l’effacement global existent.
 4. **MISSING/BLOCKED — 007** : formats historiques non lus/migrés ; leur sens, fixtures et choix métier manquent. Aucun scoring psychométrique ni compatibilité n’est inventé.
@@ -69,11 +69,11 @@ L’incident du 1 octobre (500, Aiven affiché `Powered off` par l’utilisateur
 6. **MISSING tests** : répétabilité Gordon, stabilité du snapshot comparaison, matrices messages/RDV/entreprises, extraction de contenu PDF et assertions AuditLog. Les 31 tests verts ne couvrent pas ces critères.
 7. **BLOCKED décisions** : conséquences métier du retrait, rétention des différents objets, référentiels officiels, fournisseur IA réel, choix éventuel de synchronisation externe. Ces choix ne sont pas faits par cet audit.
 
-Séparation observée : réponses dans Assessment.answers ; résultat déterministe/raw dans Assessment.results ; brouillon dans Interpretation.draft ; approbation explicite via reviewed ; publication copie vers published_content avec auteur/date. Gordon centralisé et déterministe ; Ennéagramme auto-déclaré ; autorisations serveur et consentement présents. **Constitution III partiellement satisfaite à cause de la conservation IA et de la garantie d’immutabilité ; VIII partiellement satisfaite à cause de la couverture audit.** Aucune conformité absolue n’est revendiquée.
+Séparation observée : réponses dans Assessment.answers ; résultat déterministe/raw dans Assessment.results ; brouillon dans Interpretation.draft ; approbation explicite via reviewed ; publication copie vers published_content avec auteur/date. Gordon centralisé et déterministe ; Ennéagramme auto-déclaré ; autorisations serveur et consentement présents. **Constitution III : conservation IA corrigée pour les nouvelles générations ; garantie d’immutabilité des définitions encore partielle (003) ; VIII partiellement satisfaite à cause de la couverture audit.** Aucune conformité absolue n’est revendiquée.
 
-## Prochain travail technique recommandé — non implémenté
+## Suite éventuelle de 009
 
-**Feature 009 : conserver la sortie IA originale indépendamment du brouillon humain et de chaque nouvelle génération.** Préparer une stratégie d’historique et des tests de révision/régénération démontrant la conservation du contenu et des métadonnées, sans activation d’un fournisseur réel et sans modification des règles de publication. Les données déjà écrasées ne pourront pas être reconstituées arbitrairement. Cette priorité corrige une contradiction constitutionnelle vérifiable, avant d’étendre l’IA.
+La conservation interne recommandée par la baseline e71138c est maintenant implémentée et testée avec fake. La validation d’un fournisseur réel appartient à une phase séparée, bloquée faute de crédits ; aucune activation ni clé demandée. Les assistants comparaison/questions/courriers restent absents, hors correction actuelle. Les autres features PARTIAL sont inchangées.
 
 ## Détail par feature et par tâche
 
@@ -96,7 +96,7 @@ Source : `specs/001-identity-roles-isolation/spec.md`, `plan.md`, `tasks.md` de 
 | T003 — Implémenter les contrôles serveur. | DONE | Middleware auth/ActiveAccount, scope TenantModel, contrôles Access et contrôleurs ; tests W/C ci-dessus. |
 | T004 — Remplacer les relations d'autorisation fondées uniquement sur email. | DONE | Client.user_id et User.organization_id ; pas d’autorisation déduite du seul e-mail. |
 | T005 — Tester l'isolation inter-patient/inter-organisation/inter-tenant. | PARTIAL | Tests inter-patient/inter-tenant présents ; deux entreprises distinctes du même tenant ne sont pas testées. |
-| T006 — Auditer les opérations sensibles. | PARTIAL | Access::audit existe ; AuthController et AccountController::accept/resend ne journalisent pas ces opérations ; aucune assertion AuditLog dans les tests. |
+| T006 — Auditer les opérations sensibles. | PARTIAL | Access::audit existe ; AuthController et AccountController::accept/resend ne journalisent pas ces opérations ; aucune assertion de ces événements dans les tests ; génération IA couverte séparément en 009. |
 
 **Prochaine action :** Compléter matrice négative et inventaire des actions auditées.
 
@@ -259,25 +259,39 @@ Source : `specs/008-needs-custom-tests/spec.md`, `plan.md`, `tasks.md` de la cop
 
 <a id="feature-009"></a>
 
-### 009 — Interprétation IA : CONTRADICTS
+### 009 — Interprétation IA : PARTIAL
 
-Source : `specs/009-ai-interpretation/spec.md`, `plan.md`, `tasks.md` de la copie identifiée.
+Source inchangée : `specs/009-ai-interpretation/spec.md`, `plan.md`, `tasks.md` de la copie externe identifiée. Statut avant : CONTRADICTS dans e71138c. La spec ne définit pas une politique métier de régénération détaillée ; le minimum technique retenu est d’ajouter chaque sortie réussie à un historique, sans écraser les précédentes, en conservant le comportement existant de remplacement du brouillon courant. Aucun historique de toutes les révisions humaines n’est inventé et aucune publication automatique ajoutée.
 
-**Code et exigences :** Interpretation et AssessmentController::ai ; génération optionnelle, métadonnées, aucune publication automatique.
+**Architecture :** une colonne nullable `Interpretation.ai_generations`, cast `encrypted:array`, masquée dans la sérialisation générique. Chaque entrée contient UUID, horodatage d’enregistrement, utilisateur demandeur, contenu textuel original intégral, modèle demandé, modèle/identifiant retournés si disponibles, version et messages exacts du prompt, entrée structurée expurgée des réponses libres. Un modèle retourné inconnu reste null, jamais déduit arbitrairement. Le brouillon courant reste `draft` (limite existante 50000 caractères) et la publication reste `published_content`. Le texte original conservé n’est pas tronqué à cette limite.
 
-**Preuves disponibles :** `W::test_ai_is_opt_in_and_never_publishes_or_sends_identity`; `W::test_patient_consent_submission_lock_and_publication`.
+**Régénération :** append sous le verrou transactionnel Assessment existant, dans l’ordre d’enregistrement des réponses réussies. Les champs de dernière génération existants restent compatibles. La sortie initiale conservée A et ses métadonnées persistent quand C arrive ; le brouillon devient C, la publication B et sa date/son validateur restent inchangés. Il n’y a ni retour automatique à un ancien brouillon ni archive de toutes les éditions humaines. Les tests de concurrence MySQL réels restent non exécutés.
 
-**Limites / écarts au plan :** La sortie brute IA est écrasée lors de révision/régénération ; pas d’historique des générations ; fournisseur réel non validé ; autres assistants absents.
+**Migration :** `2026_10_01_160120_add_ai_generations_to_interpretations_table.php` ajoute seulement un LONGTEXT nullable ; aucun backfill, aucune ancienne migration modifiée. Pour les interprétations anciennes, null signifie « aucune sortie originale attestée dans cet historique », et non que le draft est une sortie brute. Le premier enregistrement futur ne prétend pas être la première génération historique. Les anciens champs restent inchangés. Migration testée sur SQLite avec une ligne préexistante ; non appliquée à Aiven, non testée sur MySQL 8.4. Un rollback de schéma supprimerait l’historique : ne pas l’utiliser en production sans sauvegarde et décision explicite.
 
-| Tâche source | Statut | Constat et preuve / manque |
+**Accès :** historique affiché en texte échappé uniquement pour admin/psychologue dans la page d’évaluation déjà autorisée. Aucune nouvelle route. Patient/entreprise/conseiller exclus ; aucun ajout aux restitutions patient ni à l’export de droits. Le cycle d’effacement existant supprime l’historique avec la ligne Interpretation ; aucune copie hors de ce périmètre. Ce stockage applicatif n’est pas un journal inviolable contre une écriture SQL privilégiée.
+
+**Preuves :** `tests/Feature/AiInterpretationHistoryTest.php` (12 cas, 143 assertions) ; tests existants WorkflowTest sur opt-in/publication conservés. A → révision B → publication B → régénération C vérifié pour admin et psychologue, avec données relues depuis la base. Test migration préexistante, original long complet, chiffrement, XSS, inter-tenant/rôles, erreurs fournisseur simulées et audit de génération.
+
+| Tâche source | Statut | Constat / preuve |
 |---|---|---|
-| T001 — Définir entité Interpretation. | PARTIAL | Entité séparée, une ligne unique par assessment ; pas de génération historique ni champ original IA. |
-| T002 — Stocker statut draft. | DONE | draft distinct de published_content/published_at ; état brouillon implicite, équivalent accepté. |
-| T003 — Stocker métadonnées de génération disponibles. | CONTRADICTS | model/prompt_version/input_snapshot présents mais remplacés par updateOrCreate ; draft IA remplacé par édition humaine, donc contenu généré initial non conservé. Texte prompt versionné seulement dans Git ; réponse au-delà de 50000 caractères tronquée. |
-| T004 — Implémenter génération sans publication. | DONE | Endpoint séparé du calcul/publication, autorisation publisher, opt-in, réponse simulée testée ; pas de service dédié comme proposé dans plan. |
-| T005 — Tester invisibilité patient avant publication. | PARTIAL | Invisibilité brouillon manuel testée ; test IA prouve statut non publié mais ne fait pas de GET patient de ce brouillon IA. |
+| T001 — Définir entité Interpretation. | DONE | Modèle existant réutilisé ; historique chiffré ajouté sans nouvelle entité. |
+| T002 — Stocker statut draft. | DONE | Brouillon et publication séparés, génération ne publie pas. |
+| T003 — Stocker métadonnées de génération disponibles. | DONE | Chaque nouvelle sortie et ses métadonnées persistent après édition/régénération ; réponses inconnues restent null ; anciennes pertes non reconstituées. |
+| T004 — Implémenter génération sans publication. | PARTIAL | Workflow interne testé avec fake ; intégration fournisseur OpenAI réel BLOCKED / NOT VALIDATED faute de crédits API. Architecture contrôleur existante conservée, pas de refonte en service. |
+| T005 — Tester invisibilité patient avant publication. | DONE | GET patient après génération, puis après publication B/régénération C : originaux privés ; export patient sans historique. |
 
-**Prochaine action :** Conserver séparément sortie IA originale, révisions humaines et métadonnées, sans activer de fournisseur.
+```yaml
+Workflow IA interne : testé avec fake/mock
+Persistance/versionnement : testé (historique des générations réussies)
+Révision humaine : testée
+Publication : testée (workflow 010 inchangé)
+Fournisseur OpenAI réel : NON TESTÉ / BLOQUÉ faute de crédits API
+```
+
+**Suite complète exécutée :** 43 tests, 383 assertions réussies sur SQLite ; Pint et compilation Blade réussis. Aucune requête réelle à un fournisseur IA payant, aucun crédit consommé. `Http::preventStrayRequests()` et endpoint fake déterministe dans la nouvelle suite. Les succès simulés ne suffisent pas à marquer 009 DONE.
+
+**Restant :** déploiement/migration Aiven et validation MySQL isolée non exécutés ; validation réelle fournisseur bloquée ; aides IA spécialisées non implémentées. Ne pas confondre le blocage externe avec le fonctionnement du workflow interne.
 
 <a id="feature-010"></a>
 
@@ -465,7 +479,7 @@ Source : `specs/018-audit-retention-security/spec.md`, `plan.md`, `tasks.md` de 
 
 **Preuves disponibles :** `W::test_cross_tenant_and_cross_patient_access_are_denied`; `W::test_document_is_encrypted_private_and_signature_does_not_bypass_access`; `W::test_patient_consent_submission_lock_and_publication`; `C::test_anonymization_requires_expired_archived_dossier_and_correct_confirmation`; `C::test_retention_hold_and_recent_appointment_prevent_erasure`; `C::test_backup_authentication_rejects_tampering`.
 
-**Limites / écarts au plan :** Journal incomplet/non testé ; politique métier non validée ; tests croisés non exhaustifs et stockage durable absent ; reproduction IA contredite (009).
+**Limites / écarts au plan :** Journal incomplet/non testé ; politique métier non validée ; tests croisés non exhaustifs et stockage durable absent ; conservation IA corrigée dans 009, fournisseur réel non validé.
 
 | Tâche source | Statut | Constat et preuve / manque |
 |---|---|---|
@@ -478,7 +492,7 @@ Source : `specs/018-audit-retention-security/spec.md`, `plan.md`, `tasks.md` de 
 | T007 — Vérifier verrouillage des passations. | PARTIAL | 409 après soumission couvert ; reprise navigateur et concurrence MySQL non exécutées. |
 | T008 — Exécuter revue de convergence globale. | DONE | Présent audit 001–018, matrices tâches/preuves, roadmap et traçabilité ; aucune feature développée. |
 
-**Prochaine action :** Traiter en priorité 009 conservation IA, puis audit/rétention et recette transverse.
+**Prochaine action :** Compléter ultérieurement audit/rétention et recette transverse ; fournisseur 009 réel bloqué.
 
 ## Annexe — empreintes des 57 documents source lus
 

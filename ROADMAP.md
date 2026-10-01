@@ -1,10 +1,10 @@
 # Roadmap — convergence Spec Kit 001–018
 
-Mise à jour : 1 octobre 2026. Code de référence : `990f470`.
+Mise à jour : 1 octobre 2026. Baseline de convergence : `e71138c` ; mise à jour ciblée 009 après correction de persistance.
 
 Cette roadmap est créée dans le dépôt Laravel : la roadmap initiale était dans la copie externe du Spec Kit. Provenance, critères et preuves dans [SPEC-CONVERGENCE.md](docs/SPEC-CONVERGENCE.md). Les anciens `planned` sont remplacés par les constats réels ; un parcours utilisable ne suffit pas à clôturer une feature dont les critères importants restent incomplets.
 
-Statuts : `DONE`, `PARTIAL`, `MISSING`, `BLOCKED`, `CONTRADICTS`. Les statuts des sous-tâches peuvent différer de celui de leur feature. Aucune nouvelle fonctionnalité développée par cette mise à jour.
+Statuts : `DONE`, `PARTIAL`, `MISSING`, `BLOCKED`, `CONTRADICTS`. Les statuts des sous-tâches peuvent différer de celui de leur feature. Les autres features restent inchangées ; seule la conservation interne de 009 a été corrigée.
 
 | ID | Feature | Dépendances source | Statut | Travail restant prioritaire |
 |---|---|---|---|---|
@@ -16,7 +16,7 @@ Statuts : `DONE`, `PARTIAL`, `MISSING`, `BLOCKED`, `CONTRADICTS`. Les statuts de
 | 006 / R06 | Scoring Gordon | 003, 004 | PARTIAL | Ajouter les tests de reproductibilité/bornes puis importer un référentiel autorisé. |
 | 007 / R07 | Ennéagramme | 003, 004 | PARTIAL | Décider format canonique, fournir exemples historiques autorisés et décider le traitement des égalités. |
 | 008 / R08 | Besoins et tests personnalisés | 003, 004 | PARTIAL | Compléter le format besoins sur une source autorisée, puis les tests par type. |
-| 009 / R09 | Interprétation IA | 004, 006/007/008 | CONTRADICTS | Conserver séparément sortie IA originale, révisions humaines et métadonnées, sans activer de fournisseur. |
+| 009 / R09 | Interprétation IA | 004, 006/007/008 | PARTIAL | Conservation chiffrée et tests simulés livrés ; fournisseur OpenAI réel BLOCKED / NOT VALIDATED faute de crédits API. |
 | 010 / R10 | Révision humaine et publication | 009 (brouillon manuel aussi disponible) | DONE | Conserver ce comportement et étendre ultérieurement les tests de traçabilité. |
 | 011 / R11 | Portail patient | 001, 004, 010 | PARTIAL | Rendre toutes les passations accessibles au patient et couvrir les parcours croisés. |
 | 012 / R12 | Portail entreprise | 001, 002 | PARTIAL | Tester deux entreprises du même cabinet et un autre tenant. |
@@ -25,11 +25,11 @@ Statuts : `DONE`, `PARTIAL`, `MISSING`, `BLOCKED`, `CONTRADICTS`. Les statuts de
 | 015 / R15 | Messagerie et agenda | 001, 002 | PARTIAL | Tester isolation des lectures et envois avant toute intégration externe. |
 | 016 / R16 | Comparateur | 006/007, 010 | PARTIAL | Tester snapshot après évolution des données sources et refus versions incompatibles. |
 | 017 / R17 | Courriers et PDF | 010, 016 | PARTIAL | Tester le contenu PDF patient après révision privée et les données autorisées. |
-| 018 / R18 | Audit, rétention et sécurité | 001–017 | PARTIAL | Traiter en priorité 009 conservation IA, puis audit/rétention et recette transverse. |
+| 018 / R18 | Audit, rétention et sécurité | 001–017 | PARTIAL | Audit/rétention et recette transverse à compléter ; conservation 009 corrigée. |
 
 ## Prochain travail technique
 
-009 — Conservation indépendante de la sortie IA originale et des générations/révisions, avec tests. **Recommandation seulement : aucun développement réalisé dans cet audit.** Puis combler les tests de sécurité/historique manquants et décider les périmètres CRUD incomplets.
+009 — Conservation indépendante des générations livrée, scénario A/B/publication B/C testé. La phase fournisseur réel est séparée et **BLOCKED / NOT VALIDATED — crédits API OpenAI indisponibles**. Aucun appel réel, aucune clé demandée, aucune dépense dans les tests. Les aides IA spécialisées restent non implémentées ; aucune autre feature développée.
 
 ## Dépendances et reports
 

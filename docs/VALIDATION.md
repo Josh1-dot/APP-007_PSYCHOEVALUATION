@@ -2,6 +2,34 @@
 
 Mise à jour : 1 octobre 2026.
 
+## Feature 009 — correction depuis e71138c
+
+```yaml
+Workflow IA interne : testé avec fake/mock
+Persistance/versionnement : testé (générations réussies distinctes)
+Révision humaine : testée
+Publication : testée
+Fournisseur OpenAI réel : NON TESTÉ / BLOQUÉ faute de crédits API
+```
+
+- `php artisan test --compact tests/Feature/AiInterpretationHistoryTest.php` : **12 tests/cas, 143 assertions réussies**, 1,26 s, SQLite en mémoire.
+- `vendor/bin/pint --dirty --format agent` : réussi.
+- `php artisan test --compact` : **43 tests, 383 assertions réussies**, 5,12 s. Les 31 tests préexistants restent verts.
+- `php artisan view:cache --no-interaction` et `git diff --check` : réussis.
+- Aucun appel IA réel : endpoint fictif et réponses déterministes via Http::fake ; Http::preventStrayRequests interdit les sorties non simulées de la nouvelle suite. Aucune clé ni crédit requis.
+
+### Preuves persistées
+
+Admin et psychologue : génération A conservée, édition B sans modification de A, publication B sans modification de A, régénération C ajoutée sans modification de A ni de la publication B/date/validateur. Messages exacts, modèle demandé/retourné, identifiant réponse, demandeur, date, prompt et snapshot conservés. Réponse modèle absente stockée null ; original intégral même au-delà de la limite du brouillon.
+
+Chiffrement du champ vérifié en base, historique exclu de toArray, affichage échappé, invisibilité patient avant/après publication et régénération, absence dans export patient, refus des rôles non autorisés et d’un autre cabinet. Audit de génération vérifié, erreurs HTTP/contenu invalide simulées ne modifient aucun champ existant ; panne de connexion simulée ne crée aucune interprétation.
+
+### Migration et limites
+
+`2026_10_01_160120_add_ai_generations_to_interpretations_table.php` ajoute une colonne nullable, sans backfill ni modification des anciennes migrations. Test sur schéma préexistant et ligne ancienne : valeurs chiffrées et champs historiques inchangés, original inconnu conservé comme inconnu ; une nouvelle génération crée seulement son propre enregistrement. Ce test a d’abord révélé une comparaison de l’objet créé sans relecture des valeurs par défaut ; l’assertion a été corrigée pour comparer la ligne réellement persistée avant/après. Résultats ci-dessus obtenus après correction.
+
+Migration non exécutée sur Aiven, MySQL 8.4 isolé non testé, concurrence réelle non testée. Pas de déploiement/push. Aucun modèle fournisseur/version réel validé. L’historique technique n’archive pas toutes les révisions humaines et ne reconstitue pas les sorties anciennes déjà perdues. Les assistants IA spécialisés restent non implémentés. **009 passe de CONTRADICTS à PARTIAL, pas DONE ; 010 conserve son workflow.** Les sections suivantes décrivent la baseline historique avant cette correction.
+
 ## Audit de convergence Spec Kit — 1 octobre 2026
 
 - Lecture des 18 triplets spec/plan/tasks et des trois documents de gouvernance dans la copie externe identifiée dans [SPEC-CONVERGENCE.md](SPEC-CONVERGENCE.md). Ils n’étaient pas présents dans le dépôt Laravel ; leurs empreintes figurent dans l’audit.
@@ -15,11 +43,11 @@ Mise à jour : 1 octobre 2026.
 
 ### Ce que la suite verte ne démontre pas
 
-Aucun test dédié de répétabilité Gordon, de conversion des anciens formats Ennéagramme, de conservation du contenu IA original après révision/régénération, de stabilité du snapshot comparaison après changement des sources, ni d’assertion des événements AuditLog n’existe. Les tests PDF vérifient principalement réponses/MIME et archive ; ils ne prouvent pas par extraction de texte l’absence de brouillon dans le PDF patient après révision. Les tests nommés « logo inclus » et « export sans scores non publiés » ne vérifient pas respectivement les pixels/logo incorporés et un résultat non publié créé dans ce scénario : leurs assertions ont été lues, leurs noms ne sont pas considérés comme preuve suffisante.
+Lors de la baseline e71138c, aucun test dédié de répétabilité Gordon, de conversion des anciens formats Ennéagramme, de conservation IA, de stabilité comparaison ou d’événements AuditLog n’existait. La correction 009 ajoute les tests de conservation IA et d’audit de génération décrits ci-dessus ; les autres manques restent inchangés. Les tests PDF vérifient principalement réponses/MIME et archive ; ils ne prouvent pas par extraction de texte l’absence de brouillon dans le PDF patient après révision. Les tests nommés « logo inclus » et « export sans scores non publiés » ne vérifient pas respectivement les pixels/logo incorporés et un résultat non publié créé dans ce scénario : leurs assertions ont été lues, leurs noms ne sont pas considérés comme preuve suffisante.
 
 La reprise navigateur, la concurrence MySQL et les lectures croisées agenda/messages/entreprises ne sont pas intégralement couvertes. Aucun test E2E navigateur ou test de charge disponible exécuté ; aucun environnement MySQL 8.4 isolé établi pour cette mission. La suite RefreshDatabase n’est pas lancée contre Aiven applicatif. Aucun fournisseur IA réel, e-mail réel, build Docker local ou restauration distante testé.
 
-Résultat : **010 DONE ; 009 CONTRADICTS ; les 16 autres features PARTIAL**, avec tâches MISSING/BLOCKED détaillées. La contradiction IA est un constat de code (écrasement du champ draft), pas un test nouvellement exécuté. Prochaine tâche recommandée : conservation indépendante de la sortie IA et de ses générations, non implémentée dans cet audit.
+Résultat historique de e71138c : **010 DONE ; 009 CONTRADICTS ; les 16 autres features PARTIAL**, avec tâches MISSING/BLOCKED détaillées. La contradiction IA est un constat de code (écrasement du champ draft), pas un test nouvellement exécuté. Prochaine tâche recommandée : conservation indépendante de la sortie IA et de ses générations, non implémentée dans cet audit.
 
 ## Contrôles de préparation Aiven du 29 septembre 2026 (avant le relais)
 
