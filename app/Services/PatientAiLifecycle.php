@@ -18,9 +18,7 @@ class PatientAiLifecycle
         AiConversation::where('tenant_id', $client->tenant_id)->where('client_id', $client->id)->delete();
     }
 
-    /**
-     * @return list<array{uuid: string, status: string, consent_version: string, consent_text: string, consented_at: string, memory_enabled: bool, memory_consent_version: ?string, memory_consented_at: ?string, memory: mixed, messages: list<array{role: string, content: string, created_at: mixed}>}>
-     */
+    /** @return list<array<string, mixed>> */
     public function export(Client $client): array
     {
         return AiConversation::where('tenant_id', $client->tenant_id)->where('client_id', $client->id)
@@ -34,6 +32,7 @@ class PatientAiLifecycle
                 'memory_consent_version' => $conversation->memory_consent_version,
                 'memory_consented_at' => $conversation->memory_consented_at?->toIso8601String(),
                 'memory' => $conversation->memory,
+                'conversation_context' => app(PatientConversationReferences::class)->exportMetadata($conversation),
                 'messages' => $conversation->messages->map(fn ($message): array => $message->only(['role', 'content', 'created_at']))->all(),
             ])->all();
     }

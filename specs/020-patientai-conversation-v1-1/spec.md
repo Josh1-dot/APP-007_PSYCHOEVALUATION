@@ -1,6 +1,6 @@
 # Feature 020 — PatientAI Conversation v1.1
 
-**Statut :** spécification proposée, non implémentée.
+**Statut :** implémentée localement ; validation Render pending.
 **Dépendance :** Feature 019 PatientAI v1.0.
 **Source de recette :** observations Render communiquées pour cette spécification, non rejouées par l’auteur du document.
 
@@ -157,4 +157,4 @@ FakeLlmProvider reste l’implémentation de validation v1.1, sans réseau. Une 
 
 ## 12. Critère de sortie de spécification
 
-Le Spec Kit est prêt pour une revue humaine lorsque `spec.md`, `plan.md`, `tasks.md`, `acceptance.md` et `conversation-test-matrix.md` sont cohérents, que les décisions non ambiguës ci-dessus sont couvertes, et que roadmap/traceability marquent clairement « spécifié, non implémenté ». La livraison du présent lot ne revendique aucun test logiciel v1.1, déploiement ou validation Render/Aiven.
+Le Spec Kit a été validé avant implémentation ; les cinq artefacts sont cohérents et la roadmap/traceability font maintenant la distinction entre preuves locales et recette Render. Les tests locaux v1.1 sont documentés dans `docs/VALIDATION.md`. La recette Render/Aiven demeure pending et n’est pas revendiquée.

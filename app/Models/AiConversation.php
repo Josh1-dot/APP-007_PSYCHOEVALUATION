@@ -10,7 +10,7 @@ class AiConversation extends TenantModel
 {
     use HasFactory;
 
-    protected $hidden = ['memory'];
+    protected $hidden = ['memory', 'conversation_context'];
 
     protected static function booted(): void
     {
@@ -32,6 +32,6 @@ class AiConversation extends TenantModel
 
     protected function casts(): array
     {
-        return ['consented_at' => 'datetime', 'memory_enabled' => 'boolean', 'memory_consented_at' => 'datetime', 'memory' => 'encrypted:array'];
+        return ['consented_at' => 'datetime', 'memory_enabled' => 'boolean', 'memory_consented_at' => 'datetime', 'memory' => 'encrypted:array', 'conversation_context' => 'encrypted:array'];
     }
 }

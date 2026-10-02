@@ -1,6 +1,6 @@
 # Matrice de recette conversationnelle — PatientAI v1.1
 
-**Statut :** spécification de tests ; non exécutés. Tous les cas fonctionnels doivent être testés en local avec provider fake et sans réseau. Les fixtures patient doivent couvrir deux patients d’un même tenant et deux tenants distincts.
+**Statut :** exécutée en tests locaux avec provider fake et sans réseau ; les scénarios de sécurité existants complètent les cas d’isolation patient/tenant. Ce résultat ne vaut pas recette navigateur/Render.
 
 | ID | Entrée / séquence | Intent/résultat attendu | Outil et assertions de sécurité |
 |---|---|---|---|

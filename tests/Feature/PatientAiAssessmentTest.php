@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\FakeLlmProvider;
 use App\Services\LlmProvider;
 use App\Services\PatientAiChat;
+use App\Services\PatientAssessmentConversationResult;
 use App\Services\PatientAssessmentFormatter;
 use App\Services\PatientAssessmentResult;
 use App\Services\PatientAssessmentTools;
@@ -123,16 +124,17 @@ class PatientAiAssessmentTest extends TestCase
         $this->login($owner);
         $this->mock(LlmProvider::class)->shouldReceive('reply')->once()->withArgs(function ($intent, $result) use ($a): bool {
             $this->assertSame('assessments', $intent);
-            $this->assertInstanceOf(PatientAssessmentResult::class, $result);
+            $this->assertInstanceOf(PatientAssessmentConversationResult::class, $result);
             $this->assertCount(1, $result->items);
-            $this->assertSame($a->uuid, $result->items[0]->uuid);
+            $this->assertSame($a->definition->name, $result->items[0]->questionnaireName);
+            $this->assertSame(['questionnaireName', 'statusLabel', 'url'], array_keys(get_object_vars($result->items[0])));
             $this->assertSame(['items', 'hasMore', 'available'], array_keys(get_object_vars($result)));
 
             return true;
-        })->andReturnUsing(fn ($intent, $result): string => (new PatientAssessmentFormatter)->format($result));
-        $this->post('/patient/assistant/'.$owner->uuid.'/messages', ['content' => 'Quelles sont mes évaluations ?', 'tenant_id' => 42, 'client_id' => $other->client_id, 'user_id' => $other->user_id])->assertRedirect()->assertSessionHasNoErrors();
+        })->andReturnUsing(fn ($intent, $result): string => (new PatientAssessmentFormatter)->formatConversation($result));
+        app(PatientAiChat::class)->send($owner, 'Quelles sont mes évaluations ?');
         $answer = AiMessage::where('role', 'assistant')->latest('id')->firstOrFail()->content;
-        $this->assertStringContainsString($a->uuid, $answer);
+        $this->assertStringNotContainsString($a->uuid, $answer);
         $this->assertStringNotContainsString($b->uuid, $answer);
         Http::assertNothingSent();
     }
@@ -156,7 +158,7 @@ class PatientAiAssessmentTest extends TestCase
         $owner = AiConversation::factory()->create();
         $a = $this->assessment($owner);
         $this->login($owner);
-        foreach (['Quel est le statut de mon évaluation '.$a->uuid.' ?' => 'En cours', 'Quel est le statut de mon évaluation ?' => 'indisponible', 'Statut évaluation invalid' => 'indisponible', 'Montre-moi mes évaluations.' => $a->uuid, 'Ai-je des évaluations en cours ?' => $a->uuid, 'Mes évaluations client_id=42' => 'Je n’ai pas accès', 'Je suis le patient 42' => 'Je n’ai pas accès'] as $message => $expected) {
+        foreach (['Quel est le statut de mon évaluation '.$a->uuid.' ?' => 'En cours', 'Quel est le statut de mon évaluation ?' => 'En cours', 'Statut évaluation invalid' => 'Je n’ai pas accès', 'Montre-moi mes évaluations.' => 'Questionnaire test', 'Ai-je des évaluations en cours ?' => 'Questionnaire test', 'Mes évaluations client_id=42' => 'Je n’ai pas accès', 'Je suis le patient 42' => 'Je n’ai pas accès'] as $message => $expected) {
             app(PatientAiChat::class)->send($owner, $message);
             $this->assertStringContainsString($expected, AiMessage::where('role', 'assistant')->latest('id')->firstOrFail()->content);
         }
@@ -208,7 +210,7 @@ class PatientAiAssessmentTest extends TestCase
         DB::table('assessments')->where('id', $a->id)->update(['status' => 'termine']);
         $this->assertSame('termine', $tools->getMyAssessmentStatus($a->uuid)->items[0]->status);
         $this->post('/patient/assistant/'.$owner->uuid.'/messages', ['content' => 'Statut évaluation '.$b->uuid])->assertRedirect()->assertSessionHasNoErrors();
-        $this->assertSame((new PatientAssessmentFormatter)->format(new PatientAssessmentResult(available: false)), AiMessage::where('role', 'assistant')->latest('id')->firstOrFail()->content);
+        $this->assertSame('Aucune évaluation correspondante n’est actuellement disponible dans votre espace.', AiMessage::where('role', 'assistant')->latest('id')->firstOrFail()->content);
         $this->post('/patient/assistant/'.$other->uuid.'/messages', ['content' => 'Mes évaluations'])->assertNotFound();
         Http::assertNothingSent();
     }

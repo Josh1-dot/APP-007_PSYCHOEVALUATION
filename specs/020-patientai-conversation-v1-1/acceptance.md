@@ -1,6 +1,6 @@
 # Critères d’acceptation — PatientAI Conversation v1.1
 
-**Statut :** critères spécifiés, non exécutés. Un critère PASS nécessitera des tests lors de l’implémentation.
+**Statut :** critères vérifiés par tests locaux pour Feature 020 et les régressions PatientAI ; aucun de ces tests ne constitue une recette Render/Aiven.
 
 ## AC-01 — Normalisation bornée
 

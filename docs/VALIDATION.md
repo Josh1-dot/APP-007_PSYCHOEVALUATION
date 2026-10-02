@@ -396,3 +396,29 @@ Limites : corpus opérationnel exige migration puis import/revue humaine attest�
 - Aucun statut de production n’est revendiqué.
 
 La hardening v1.0 est donc documentée comme code-complete et localement vérifiée dans les limites du dépôt, sans prétendre à une validation de production non exécutée.
+
+## Feature 020 — PatientAI Conversation v1.1 (2 octobre 2026)
+
+### Statut
+
+- Code-complete : **PASS** localement.
+- Local-test-complete : **PASS** ; `php artisan test --compact --filter=PatientAi` : **300 tests / 3 251 assertions** ; `php artisan test` : **345 tests / 3 660 assertions**.
+- Render recipe : **PENDING**. Aucune recette navigateur/Render n’a été exécutée pour v1.1 ; les observations Render initiales restent les observations fournies par l’utilisateur, pas une revalidation de ce lot.
+
+### Couverture locale
+
+- Feature 020 ciblée : `tests/Feature/PatientAiConversationTest.php`, **14 tests / 115 assertions** ; variantes FR/EN, normalisation bornée, tous les intents, single/multiple/none, refus cross-tenant, follow-ups, domaine/conversation courants, chiffrement/révocation/effacement du référent, rollback local, mémoire séparée, résultat publié, documentation, export expurgé.
+- Suites PatientAI : **300 tests / 3 251 assertions**. Suite totale : **345 / 3 660**.
+- `vendor/bin/pint --dirty --format agent` : passé ; diagnostics PHP sans erreur. `php artisan route:list --path=patient/assistant` : six routes existantes conservées. `git diff --check` et scan ciblé des patterns de secrets : passés. Les routes/UI du portail restent derrière le feature flag et l’identité PatientContext.
+
+### Implémentation / migration
+
+- Nouveau routeur intent structuré et dispatcher Laravel allowlisté ; SafetyPolicy avant outil ; aucun droit issu du langage naturel.
+- DTO assessment de conversation sans UUID ; outils assessment/questionnaire/résultat/rendez-vous restent propriétaires, tenant-scoped et read-only. Clarifications non cliniques pour plusieurs correspondances ; follow-up sans référent valide n’auto-sélectionne pas un autre domaine.
+- `about_my_data` est statique et ne charge aucune donnée patient, mémoire ou RAG. Refus privés, cross-patient, sécurité, usurpation et injection ont des catégories distinctes.
+- Migration **oui**, additive et locale : `2026_10_02_120000_add_conversation_context_to_ai_conversations`. Elle ajoute `conversation_context` nullable, chiffré par cast Laravel, réservé aux identifiants de référent/source/tour/date ; rollback `down()` retire cette seule colonne. Elle a été appliquée uniquement dans les bases temporaires de tests RefreshDatabase. **Aucune migration Aiven exécutée.**
+- Provider reste `fake`; aucun appel réseau IA/OpenAI, aucun secret ajouté, aucun déploiement Render et aucun push.
+
+### Limites
+
+Les tests locaux ne prouvent pas le comportement effectif sur Render/Aiven, le schéma distant, la concurrence MySQL, le navigateur/E2E ou l’expérience de recette réelle. La migration additive doit être revue/appliquée via le processus de livraison autorisé avant activation du nouveau code en production ; ne pas activer le flag ou déployer par déduction de la suite locale. Voir [V1.1-READINESS.md](patientai/V1.1-READINESS.md) pour le tableau de statut.

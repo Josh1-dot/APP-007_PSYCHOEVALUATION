@@ -10,7 +10,7 @@ class SafetyPolicy
     {
         $normalized = $this->router->normalize($message);
         if ($this->claimsAuthority($normalized)) {
-            return 'restricted_internal';
+            return 'privilege_escalation';
         }
         foreach ($this->prompts->get()['refusal_patterns'] as $category => $patterns) {
             foreach ($patterns as $pattern) {

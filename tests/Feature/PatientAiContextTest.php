@@ -178,7 +178,7 @@ class PatientAiContextTest extends TestCase
         $created = AiConversation::latest('id')->firstOrFail();
         $this->assertContext($factory->fromAuthenticatedUser(), $created);
         $this->assertSame(get_object_vars($before), get_object_vars($factory->fromAuthenticatedUser()));
-        $this->mock(LlmProvider::class)->shouldReceive('reply')->once()->with('greeting')->andReturn('Bonjour sans contexte provider.');
+        $this->mock(LlmProvider::class)->shouldReceive('reply')->once()->with('greeting')->andReturn((new PromptRegistry)->response('greeting'));
         $this->post('/patient/assistant/'.$first->uuid.'/messages', ['content' => 'Bonjour', $field => $values[$field]])->assertRedirect()->assertSessionHasNoErrors();
         $this->assertSame(2, AiMessage::where('ai_conversation_id', $first->id)->count());
         $this->assertSame(0, AiMessage::where('ai_conversation_id', $second->id)->count());
