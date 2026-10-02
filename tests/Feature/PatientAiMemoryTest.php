@@ -478,6 +478,6 @@ class PatientAiMemoryTest extends TestCase
         $this->assertNull(app(PatientMemoryService::class)->context($source)->responseStyle);
         $this->assertStringContainsString('Aucune préférence', $this->send($source));
         $this->assertSame('patientai-v0.7', (new PromptRegistry)->get('patientai-v0.7')['version']);
-        $this->assertSame('patientai-v0.8', (new PromptRegistry)->get()['version']);
+        $this->assertSame('patientai-v0.9', (new PromptRegistry)->get()['version']);
     }
 }

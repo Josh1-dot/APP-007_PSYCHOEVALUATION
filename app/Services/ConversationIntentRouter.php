@@ -85,6 +85,15 @@ class ConversationIntentRouter
         return null;
     }
 
+    public function documentaryRequest(string $message): ?string
+    {
+        if (preg_match('/^(?:recherche documentaire|cherche dans la documentation|recherche dans la documentation)\s*:\s*(.+)$/iuD', trim($message), $matches)) {
+            return trim($matches[1]);
+        }
+
+        return null;
+    }
+
     public function normalize(string $message): string
     {
         return trim(preg_replace('/[^a-z0-9]+/', ' ', Str::lower(Str::ascii($message))) ?? '');

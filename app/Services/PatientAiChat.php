@@ -24,10 +24,12 @@ class PatientAiChat
             abort_unless($conversation->status === 'active', 409);
             abort_if(app(PatientAiLifecycle::class)->expired($conversation), 410);
             $refusal = $this->policy->refusal($message);
-            $request = $refusal === null ? $this->router->assessmentRequest($message) : null;
-            $helpRequest = $refusal === null ? $this->router->helpRequest($message) : null;
-            $appointmentRequest = $refusal === null ? $this->router->appointmentRequest($message) : null;
-            $resultRequest = $refusal === null ? $this->router->publishedResultRequest($message) : null;
+            $documentaryQuery = $refusal === null ? $this->router->documentaryRequest($message) : null;
+            $toolMessage = $documentaryQuery ?? $message;
+            $request = $refusal === null ? $this->router->assessmentRequest($toolMessage) : null;
+            $helpRequest = $refusal === null ? $this->router->helpRequest($toolMessage) : null;
+            $appointmentRequest = $refusal === null ? $this->router->appointmentRequest($toolMessage) : null;
+            $resultRequest = $refusal === null ? $this->router->publishedResultRequest($toolMessage) : null;
             if ($resultRequest !== null) {
                 $data = app(PatientPublishedResultTool::class)->getMyPublishedResult($resultRequest);
                 $reply = $this->provider->reply('published_result', $data);
@@ -59,6 +61,12 @@ class PatientAiChat
                 $reply = $this->provider->reply('assessments', $result);
                 if ($reply !== (new PatientAssessmentFormatter)->format($result)) {
                     throw new RuntimeException('Invalid assessment response.');
+                }
+            } elseif ($refusal === null && $documentaryQuery !== null) {
+                $data = app(PatientRagRetriever::class)->retrieve($documentaryQuery);
+                $reply = $this->provider->reply('documentation', $data);
+                if ($reply !== (new PatientRagFormatter)->format($data)) {
+                    throw new RuntimeException('Invalid documentary response.');
                 }
             } else {
                 $intent = in_array($this->router->normalize($message), ['quelle est ma preference de reponse', 'quelle est ma preference de presentation', 'que sais tu de ma preference de presentation'], true) ? 'memory' : $this->router->route($message);

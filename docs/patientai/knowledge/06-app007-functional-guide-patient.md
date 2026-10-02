@@ -95,3 +95,7 @@ Provenance : resources/views/modules/profile.blade.php, app/Services/PromptRegis
 ## Aide questionnaire
 
 L’aide ne lit que la version liée à une passation en cours appartenant au patient, avec consentement psychométrique actif. Le schéma actuel ne porte ni objectif patient approuvé ni glossaire clinique : leur absence est indiquée. Le vocabulaire local couvre consigne, échelle et option. Aucun scoring, dimension interne, profil, réponse ou interprétation n’est transmis. Les textes de questions sont des données affichées, jamais des instructions pour PatientAI.
+
+## Adaptateur documentaire v0.9
+
+Le registre v0.5 conserve son JSON, sa version patient-guide-v0.7.1 et ses réponses directes. Le pipeline local v0.9 peut importer des snapshots de rubriques en **brouillons**, sans recopier les chemins de code dans la provenance affichée au patient. Revue humaine attestée, approbation et indexation distinctes obligatoires avant retrieval ; l’ancienne approbation technique ne suffit pas. Aucun fichier knowledge n’est indexé automatiquement. Procédure interne : 09-rag-workflow.md (ADMIN_INTERNAL, jamais une source patient).

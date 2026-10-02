@@ -79,3 +79,7 @@ Outil résultat déjà publié read-only livré/testé : source Assessment/Inter
 
 ### 019 — livraison v0.8
 Mémoire contrôlée de présentation livrée/testée : préférence explicite chiffrée, accord distinct, nouvelles conversations avec/sans mémoire, DTO minimal et priorité des outils métier. Effacement/export/rétention/hold intégrés au cycle P0. PatientAI 241/2647 ; suite 284/3030. Feature globale PARTIAL, v0.9/v1.0 non commencées ; flag OFF, migration additive non appliquée, aucun réseau/déploiement. Limites SQLite, mémoire restrictive et historique décrites dans docs/VALIDATION.md.
+
+
+### 019 — livraison v0.9
+RAG local déterministe livré/testé : documents/chunks chiffrés, classification 5 audiences, revue/approbation humaines attestées, index lexical borné, contrôle tenant/assignation, citation avec provenance sûre. Guide v0.5 préservé, outils métier prioritaires ; aucune dépendance/réseau/vector DB/embedding. PatientAI 284/3053 ; suite 327/3436. Feature globale PARTIAL, v1.0 non commencée ; flag OFF, migration et corpus humain à préparer selon procédure, aucun déploiement. Limites dans docs/VALIDATION.md.

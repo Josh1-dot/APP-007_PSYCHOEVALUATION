@@ -154,3 +154,12 @@ Preuves locales SQLite uniquement ; migration applicative/Aiven, déploiement, s
 - PAI-101 : PatientAiController/Blade modes avec/sans mémoire et route memory.clear ; PatientAiLifecycle export enrichi, rétention/suppression/anonymisation/hold réutilisés.
 - PatientAiChat/SafetyPolicy/PromptRegistry patientai-v0.8 : outil métier prioritaire, mémoire minimale comme donnée et rendu provider contrôlé ; versions antérieures conservées.
 - PatientAiMemoryTest : 39 cas / 402 assertions ; PatientAI 241/2647 ; suite 284/3030. Preuves et limites dans docs/VALIDATION.md. Aucun v0.9/RAG, provider distant ni migration appliquée ; flag OFF.
+
+
+## 019 — PatientAI v0.9
+- PAI-110 : PatientRagDocument/Chunk, casts encrypted/hidden, factories/seeder de brouillons, migration create_patient_rag_tables (non appliquée en base applicative).
+- PAI-111 : PatientRagWorkflow draft/submit/review/reject/approve/index/retire, acteurs/dates/empreintes et commande locale PatientRagManage avec attestations explicites ; aucun import automatiquement approuvé.
+- PAI-112/113 : exactement cinq audiences, PatientRagRetriever depuis PatientContext ; PATIENT_CONTEXTUAL lié à une définition/version assignée visible, trois audiences privées exclues avant chunks.
+- PAI-114 : PatientRagResult/ChunkData/Provenance readonly, source publique/version/section observables sans source interne ni métadonnée professionnelle.
+- PAI-115 : PromptRegistry patientai-v0.9, documents comme données distinctes, formatter/fake/rendu exact et priorité SafetyPolicy/outils/guide avant retrieval, mémoire sans influence sur les droits.
+- PAI-116 : PatientAiRagTest 43 cas / 406 assertions ; PatientAI 284/3053, suite 327/3436. Procédure/bornes/limites : docs/ARCHITECTURE.md, docs/VALIDATION.md et knowledge/09-rag-workflow.md. Aucun v1.0, source clinique automatique ou provider distant ; flag OFF.

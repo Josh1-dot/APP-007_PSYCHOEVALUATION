@@ -72,13 +72,13 @@
 - [x] PAI-101 Effacement/rétention/nouvelle conversation sans mémoire.
 
 ## v0.9 — RAG
-- [ ] PAI-110 Modèles documents/chunks.
-- [ ] PAI-111 Workflow draft → review → approved → indexed → retired.
-- [ ] PAI-112 Classification audience.
-- [ ] PAI-113 Retriever filtré.
-- [ ] PAI-114 Provenance.
-- [ ] PAI-115 Défense prompt injection.
-- [ ] PAI-116 Tests absence de résultat/information interdite.
+- [x] PAI-110 Modèles documents/chunks.
+- [x] PAI-111 Workflow draft → review → approved → indexed → retired.
+- [x] PAI-112 Classification audience.
+- [x] PAI-113 Retriever filtré.
+- [x] PAI-114 Provenance.
+- [x] PAI-115 Défense prompt injection.
+- [x] PAI-116 Tests absence de résultat/information interdite.
 
 ## v1.0 — hardening
 - [ ] PAI-120 Refus institutionnel et contact public configurable.
@@ -120,3 +120,7 @@ PAI-090 à 092 : PatientPublishedResultTool depuis PatientContext, publication r
 
 ## Livraison v0.8 — 2 octobre 2026
 PAI-100/101 : mémoire de préférence de présentation explicite/encrypted:array dans AiConversation, consentement dédié, DTO borné et modes avec/sans mémoire ; données métier prioritaires, aucun extracteur de texte libre. Rétention/hold/export/effacement/anonymisation P0 intégrés et testés. 39 nouveaux cas / 402 assertions ; PatientAI 241/2647 ; suite complète 284/3030. Pint/routes/Blade vérifiés. Migration additive créée, non appliquée en base applicative/Aiven. Décisions/bornes/limites : docs/ARCHITECTURE.md ; preuves : docs/VALIDATION.md. Aucun v0.9/RAG commencé, flag OFF.
+
+
+## Livraison v0.9 — 2 octobre 2026
+PAI-110 à 116 : PatientRagDocument/Chunk chiffrés, workflow humain explicitement attesté et index lexical-v0.9 ; 5 audiences, retriever patient filtré tenant/contexte avant chunks, version/checksums et DTO/provenance sûrs. Guide v0.5 importable en brouillons seulement, comportement/version conservés ; outil métier/guide prioritaire et documents comme données inertes. 43 nouveaux cas / 406 assertions ; PatientAI 284/3053 ; suite complète 327/3436. Pint/Blade/commande/diff vérifiés. Migration additive non appliquée, aucun corpus humain approuvé/indexé par l’agent en base applicative. Décisions/bornes/procédure : docs/ARCHITECTURE.md et docs/patientai/knowledge/09-rag-workflow.md ; preuves/limites : docs/VALIDATION.md. Flag OFF, aucun v1.0 commencé.
