@@ -25,7 +25,7 @@ class PatientAssessmentTools
             'filters.limit' => 'sometimes|required|integer|min:1|max:20',
         ])->validate()['filters'];
         $limit = (int) ($validated['limit'] ?? 10);
-        $query = $this->visible($context);
+        $query = $this->authorizedQuery($context);
         if (isset($validated['status'])) {
             $query->where('status', $validated['status']);
         }
@@ -40,12 +40,12 @@ class PatientAssessmentTools
         if (! Str::isUuid($uuid)) {
             return new PatientAssessmentResult(available: false);
         }
-        $assessment = $this->visible($context)->where('uuid', strtolower($uuid))->first();
+        $assessment = $this->authorizedQuery($context)->where('uuid', strtolower($uuid))->first();
 
         return $assessment ? new PatientAssessmentResult([$this->data($assessment)]) : new PatientAssessmentResult(available: false);
     }
 
-    private function visible(PatientContext $context): Builder
+    public function authorizedQuery(PatientContext $context): Builder
     {
         return Assessment::query()->select(['id', 'uuid', 'assessment_definition_id', 'status'])
             ->where('tenant_id', $context->tenantId)->where('client_id', $context->clientId)->whereNotNull('uuid')

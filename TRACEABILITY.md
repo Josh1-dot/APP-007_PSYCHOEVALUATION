@@ -127,3 +127,10 @@ Preuves locales SQLite uniquement ; migration applicative/Aiven, déploiement, s
 - PAI-060 : PatientAssessmentTools::listMyAssessments, filtres bornés et DTO PatientAssessmentData/Result.
 - PAI-061 : getMyAssessmentStatus, UUID validé, tenant/propriétaire/visibilité, erreurs non énumérables ; migration UUID et Assessment existants.
 - PAI-062 : PatientAiAssessmentTest ; intégration router/chat/fake/formatter, tests isolation, statuts/liens, projection minimale et absence HTTP. Preuves et limites : docs/VALIDATION.md.
+
+
+## 019 — PatientAI v0.5
+- PAI-070 : knowledge/06-app007-functional-guide-patient.json et résumé Markdown, PatientGuideRegistry, audit des 14 rubriques contre code réel, métadonnées audience/approbation/version/provenance et liens Laravel.
+- PAI-071 : QuestionnaireHelpTool, QuestionnaireHelpData/QuestionHelpData, définition/version réelle et isolation PatientContext ; requête autorisée v0.4 partagée.
+- PAI-072 : PromptRegistry patientai-v0.5/SafetyPolicy prioritaire, tests anti-réponse/anti-profil et contenu documentaire inerte ; PatientHelpFormatter rend seulement les DTO autorisés.
+- PAI-073 : PatientAiHelpTest, tests liens patient réels et exclusions professionnelles/futures, sans réseau. Résultats et limites dans docs/VALIDATION.md. Aucune v0.6+.

@@ -53,10 +53,10 @@
 - [x] PAI-062 Tests visibilité/statuts/liens serveur.
 
 ## v0.5 — guide et questionnaires
-- [ ] PAI-070 Valider le guide fonctionnel contre le portail réel.
-- [ ] PAI-071 `get_questionnaire_help`.
-- [ ] PAI-072 Tests interdiction de choisir/suggérer une réponse.
-- [ ] PAI-073 Tests fonctions patient réellement disponibles.
+- [x] PAI-070 Valider le guide fonctionnel contre le portail réel.
+- [x] PAI-071 `get_questionnaire_help`.
+- [x] PAI-072 Tests interdiction de choisir/suggérer une réponse.
+- [x] PAI-073 Tests fonctions patient réellement disponibles.
 
 ## v0.6 — rendez-vous
 - [ ] PAI-080 Outils rendez-vous read-only.
@@ -104,3 +104,7 @@ PAI-050 à 052 implémentées/testées : PatientContextFactory depuis identité 
 
 ## Livraison v0.4
 PAI-060 à 062 implémentées/testées : PatientAssessmentTools, DTO minimaux readonly, statuts/liens Laravel et filtrage tenant/user/client/visibilité. Migration UUID additive sur Assessment réel, routes numériques conservées. Provider fake déterministe sans réseau ; rendu contrôlé pour empêcher l’invention. Voir docs/ARCHITECTURE.md et docs/VALIDATION.md pour règles exactes et preuves. 17 nouveaux cas / 86 assertions ; PatientAI 114/1595 ; suite complète 157/1977. Aucune tâche v0.5+ commencée.
+
+
+## Livraison v0.5 — 2 octobre 2026
+PAI-070 à 073 : guide local approuvé patient-guide-v0.5.1 audité contre routes/controllers/Blade, PatientGuideRegistry/DTO et liens allowlist ; QuestionnaireHelpTool/DTO depuis PatientContext, passation en cours/consentement/version liée et question validée ; SafetyPolicy prioritaire, formatter déterministe et tests fonctions réellement accessibles/IDOR/données inertes. Version active prompt patientai-v0.5, versions antérieures conservées. 40 cas / 346 assertions nouveaux ; PatientAI 154/1936 ; suite 197/2319. Résultats et limites dans docs/VALIDATION.md ; aucune tâche v0.6+ commencée.

@@ -69,12 +69,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/evaluations/{assessment}/pdf', [AssessmentController::class, 'pdf'])->name('evaluations.pdf');
     Route::get('/questionnaires', [DefinitionController::class, 'index']);
     Route::post('/questionnaires', [DefinitionController::class, 'store']);
-    Route::get('/calendrier', [ModuleController::class, 'calendar']);
+    Route::get('/calendrier', [ModuleController::class, 'calendar'])->name('calendar.index');
     Route::post('/calendrier', [ModuleController::class, 'appointment']);
     Route::post('/calendrier/{appointment}/annuler', [ModuleController::class, 'cancel']);
-    Route::get('/messagerie', [ModuleController::class, 'messages']);
+    Route::get('/messagerie', [ModuleController::class, 'messages'])->name('messages.index');
     Route::post('/messagerie', [ModuleController::class, 'send']);
-    Route::get('/documents', [ModuleController::class, 'documents']);
+    Route::get('/documents', [ModuleController::class, 'documents'])->name('documents.index');
     Route::post('/documents', [ModuleController::class, 'upload']);
     Route::get('/documents/{document}/lien', [ModuleController::class, 'documentLink']);
     Route::get('/documents/{document}/telecharger', [ModuleController::class, 'download'])->middleware('signed')->name('documents.download');

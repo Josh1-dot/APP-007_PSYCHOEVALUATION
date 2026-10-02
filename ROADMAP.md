@@ -63,3 +63,7 @@ Contexte d'identité serveur minimal implémenté/testé : DTO readonly userId/t
 
 ### 019 — livraison v0.4
 Outils de liste/statut d’évaluations read-only implémentés et testés localement, autorisation PatientContext et DTO minimal. UUID ajouté au modèle réel ; migration non appliquée en production. Feature globale PARTIAL, v0.5 à v1.0 non commencées. Flag OFF, aucun réseau/provider distant ; limites SQLite/MySQL/E2E détaillées dans docs/VALIDATION.md.
+
+
+### 019 — livraison v0.5
+Guide patient local déterministe approuvé/versionné et aide questionnaire read-only depuis la passation/version autorisée implémentés/testés localement. Objectif clinique non documenté déclaré absent, aucun choix de réponse/profil. Feature globale PARTIAL ; v0.6 à v1.0 non commencées. Aucun RAG/provider distant/réseau ; flag OFF, aucun déploiement/migration applicative.

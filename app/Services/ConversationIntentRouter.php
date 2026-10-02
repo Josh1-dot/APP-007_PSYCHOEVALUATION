@@ -35,6 +35,37 @@ class ConversationIntentRouter
         return null;
     }
 
+    /** @return array{topic: string}|array{uuid: string, question_id: ?string}|null */
+    public function helpRequest(string $message): ?array
+    {
+        $topic = match ($this->normalize($message)) {
+            'comment fonctionne mon compte', 'comment modifier mon mot de passe', 'mon compte' => 'account',
+            'comment fonctionne le consentement', 'comment retirer mon consentement', 'mon consentement' => 'consent',
+            'comment fonctionne mon tableau de bord', 'comment utiliser ce site', 'mon tableau de bord' => 'dashboard',
+            'ou sont mes evaluations', 'comment acceder a mes evaluations' => 'assessments',
+            'comment fonctionne une passation', 'comment sauvegarder mes reponses', 'est ce que je peux revenir a la question precedente', 'comment dois je utiliser cette page', 'comment soumettre mon questionnaire' => 'passations',
+            'comment fonctionnent les questionnaires' => 'questionnaires',
+            'comment voir mes resultats', 'ou voir mes resultats publies' => 'results',
+            'comment voir mes rendez vous', 'comment fonctionne le calendrier' => 'appointments',
+            'comment fonctionne la messagerie', 'comment envoyer un message' => 'messages',
+            'comment acceder a mes documents', 'comment telecharger mes documents' => 'documents',
+            'comment mes donnees sont elles protegees', 'confidentialite' => 'privacy',
+            'quels sont mes droits', 'comment exporter mes donnees', 'comment demander un effacement' => 'rights',
+            'que fait patientai', 'comment fonctionne patientai' => 'patientai',
+            'comment contacter l assistance', 'comment contacter le cabinet' => 'assistance',
+            default => null,
+        };
+        if ($topic !== null) {
+            return ['topic' => $topic];
+        }
+        $text = str_replace(["'", '’'], ' ', Str::ascii(trim($message)));
+        if (preg_match('/^(?:aide questionnaire|aide pour mon questionnaire|explique la consigne|explique l echelle|que signifie l echelle|explique le vocabulaire|que signifie ce mot|explique la navigation)(?:\s+([^\s]+))?(?:\s+question\s+([^\s]+))?\s*[?.!]*$/iD', $text, $matches)) {
+            return ['uuid' => trim($matches[1] ?? '', '?.!'), 'question_id' => isset($matches[2]) ? trim($matches[2], '?.!') : null];
+        }
+
+        return null;
+    }
+
     public function normalize(string $message): string
     {
         return trim(preg_replace('/[^a-z0-9]+/', ' ', Str::lower(Str::ascii($message))) ?? '');

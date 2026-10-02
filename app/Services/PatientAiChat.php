@@ -25,7 +25,14 @@ class PatientAiChat
             abort_if(app(PatientAiLifecycle::class)->expired($conversation), 410);
             $refusal = $this->policy->refusal($message);
             $request = $refusal === null ? $this->router->assessmentRequest($message) : null;
-            if ($request !== null) {
+            $helpRequest = $refusal === null ? $this->router->helpRequest($message) : null;
+            if ($helpRequest !== null) {
+                $data = isset($helpRequest['topic']) ? app(PatientGuideRegistry::class)->guide($helpRequest['topic']) : app(QuestionnaireHelpTool::class)->getQuestionnaireHelp($helpRequest['uuid'], $helpRequest['question_id']);
+                $reply = $this->provider->reply('help', $data);
+                if ($reply !== (new PatientHelpFormatter)->format($data)) {
+                    throw new RuntimeException('Invalid help response.');
+                }
+            } elseif ($request !== null) {
                 $tools = app(PatientAssessmentTools::class);
                 $result = $request['tool'] === 'list' ? $tools->listMyAssessments($request['filters']) : $tools->getMyAssessmentStatus($request['uuid']);
                 $reply = $this->provider->reply('assessments', $result);
