@@ -35,8 +35,8 @@ class PatientAiPolicyTest extends TestCase
         $registry = new PromptRegistry;
         $this->assertSame('patientai-v0.2', $registry->get('patientai-v0.2')['version']);
         $definition = $registry->get();
-        $this->assertSame('patientai-v0.7', PromptRegistry::CURRENT_VERSION);
-        $this->assertSame('patientai-v0.7', $definition['version']);
+        $this->assertSame('patientai-v0.8', PromptRegistry::CURRENT_VERSION);
+        $this->assertSame('patientai-v0.8', $definition['version']);
         $this->assertSame($definition, $registry->get());
         foreach (['assistant numérique', 'psychologue', 'médecin', 'diagnostic', 'N’invente', 'Ne réponds jamais', 'score', 'secret', 'Laravel', 'réseau'] as $rule) {
             $this->assertStringContainsString(str_replace('’', "'", $rule), $definition['instructions']);

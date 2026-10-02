@@ -147,3 +147,10 @@ Preuves locales SQLite uniquement ; migration applicative/Aiven, déploiement, s
 - PAI-091 : sélection explicite publiée sans draft/ai_generations/input_snapshot/notes/answers ; conteneur results filtré côté serveur. FakeLlmProvider/PatientAiChat rendent et vérifient un DTO sans Eloquent ni permissions provider.
 - PAI-092 : PatientAiPublishedResultTest, 26 cas / 157 assertions ; workflow publier/dépublier, isolation, incohérences, DTO, fidélité/absence d’invention, distinction faits/explication et absence HTTP. PatientAI 202/2245 ; suite 245/2628.
 - Prompt actif patientai-v0.7, guide corrigé patient-guide-v0.7.1. Aucune v0.8+, route/Blade/migration nouvelle ; décisions/limites dans docs/ARCHITECTURE.md et docs/VALIDATION.md.
+
+
+## 019 — PatientAI v0.8
+- PAI-100 : PatientMemoryService/Data/Formatter, AiConversation encrypted:array/hidden, config bornée et migration add_controlled_memory_to_ai_conversations ; accord mémoire explicite et seule enum standard/concise.
+- PAI-101 : PatientAiController/Blade modes avec/sans mémoire et route memory.clear ; PatientAiLifecycle export enrichi, rétention/suppression/anonymisation/hold réutilisés.
+- PatientAiChat/SafetyPolicy/PromptRegistry patientai-v0.8 : outil métier prioritaire, mémoire minimale comme donnée et rendu provider contrôlé ; versions antérieures conservées.
+- PatientAiMemoryTest : 39 cas / 402 assertions ; PatientAI 241/2647 ; suite 284/3030. Preuves et limites dans docs/VALIDATION.md. Aucun v0.9/RAG, provider distant ni migration appliquée ; flag OFF.

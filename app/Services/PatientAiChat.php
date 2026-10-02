@@ -61,7 +61,21 @@ class PatientAiChat
                     throw new RuntimeException('Invalid assessment response.');
                 }
             } else {
-                $reply = $refusal ?? $this->provider->reply($this->router->route($message));
+                $intent = in_array($this->router->normalize($message), ['quelle est ma preference de reponse', 'quelle est ma preference de presentation', 'que sais tu de ma preference de presentation'], true) ? 'memory' : $this->router->route($message);
+                if ($refusal !== null) {
+                    $reply = $refusal;
+                } elseif (($conversation->memory_enabled && $intent !== 'unknown') || $intent === 'memory') {
+                    $memory = app(PatientMemoryService::class)->context($conversation);
+                    $reply = $this->provider->reply($intent, $memory);
+                    if ($reply !== (new PatientMemoryFormatter)->format($intent, $memory)) {
+                        throw new RuntimeException('Invalid memory response.');
+                    }
+                    if ($memory->responseStyle !== null) {
+                        Access::audit('patientai.memoire_utilisee', $conversation);
+                    }
+                } else {
+                    $reply = $this->provider->reply($intent);
+                }
             }
             if (trim($reply) === '' || mb_strlen($reply) > 10000) {
                 throw new RuntimeException('Invalid provider response.');

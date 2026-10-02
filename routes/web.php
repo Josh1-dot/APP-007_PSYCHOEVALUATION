@@ -25,6 +25,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('patient/assistant')->name('patientai.')->group(function (): void {
         Route::get('/', [PatientAiController::class, 'index'])->name('index');
         Route::post('/', [PatientAiController::class, 'store'])->middleware('throttle:patientai')->name('store');
+        Route::delete('/memory', [PatientAiController::class, 'clearMemory'])->middleware('throttle:patientai')->name('memory.clear');
         Route::get('/{conversation}', [PatientAiController::class, 'show'])->name('show');
         Route::post('/{conversation}/messages', [PatientAiController::class, 'message'])->middleware('throttle:patientai')->name('message');
         Route::delete('/{conversation}', [PatientAiController::class, 'destroy'])->name('destroy');

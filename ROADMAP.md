@@ -75,3 +75,7 @@ Rendez-vous PatientAI read-only implémentés/testés : liste bornée/prochain v
 
 ### 019 — livraison v0.7
 Outil résultat déjà publié read-only livré/testé : source Assessment/Interpretation, publication effective et propriété, DTO sans données privées, scores source exacts et texte publié avec explication descriptive distincte. PatientAI 202/2245 ; suite 245/2628. Feature globale PARTIAL, v0.8 à v1.0 non commencées. Flag OFF, aucun provider distant/réseau/déploiement ; limites SQLite, texte/extrait et historique décrites dans docs/VALIDATION.md.
+
+
+### 019 — livraison v0.8
+Mémoire contrôlée de présentation livrée/testée : préférence explicite chiffrée, accord distinct, nouvelles conversations avec/sans mémoire, DTO minimal et priorité des outils métier. Effacement/export/rétention/hold intégrés au cycle P0. PatientAI 241/2647 ; suite 284/3030. Feature globale PARTIAL, v0.9/v1.0 non commencées ; flag OFF, migration additive non appliquée, aucun réseau/déploiement. Limites SQLite, mémoire restrictive et historique décrites dans docs/VALIDATION.md.

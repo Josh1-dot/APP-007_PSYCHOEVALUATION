@@ -9,6 +9,7 @@ use App\Services\PatientAiChat;
 use App\Services\PatientAiLifecycle;
 use App\Services\PatientContext;
 use App\Services\PatientContextFactory;
+use App\Services\PatientMemoryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -44,11 +45,20 @@ class PatientAiController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $this->patient();
-        $request->validate(['accepted' => 'accepted']);
-        $conversation = DB::transaction(function (): AiConversation {
+        $data = $request->validate([
+            'accepted' => 'accepted',
+            'memory_enabled' => 'sometimes|boolean',
+            'memory_accepted' => $request->boolean('memory_enabled') ? 'required|accepted' : 'sometimes|accepted',
+            'memory_style' => 'nullable|in:standard,concise|prohibited_unless:memory_enabled,1',
+        ]);
+        $conversation = DB::transaction(function () use ($data): AiConversation {
             $context = $this->contexts->fromAuthenticatedUser(lockClient: true);
-            $conversation = AiConversation::create(['tenant_id' => $context->tenantId, 'user_id' => $context->userId, 'client_id' => $context->clientId, 'consent_version' => config('patientai.consent_version'), 'consent_text' => config('patientai.consent_text'), 'consented_at' => now()]);
+            $conversation = AiConversation::create(['tenant_id' => $context->tenantId, 'user_id' => $context->userId, 'client_id' => $context->clientId, 'consent_version' => config('patientai.consent_version'), 'consent_text' => config('patientai.consent_text'), 'consented_at' => now(), 'memory_enabled' => (bool) ($data['memory_enabled'] ?? false), 'memory_consent_version' => ($data['memory_enabled'] ?? false) ? PatientMemoryService::CONSENT_VERSION : null, 'memory_consented_at' => ($data['memory_enabled'] ?? false) ? now() : null, 'memory' => ($data['memory_enabled'] ?? false) ? app(PatientMemoryService::class)->preference($data['memory_style'] ?? null) : null]);
             Access::audit('patientai.conversation_creee', $conversation);
+            if ($conversation->memory_enabled) {
+                app(PatientMemoryService::class)->replacePrevious($conversation);
+                Access::audit('patientai.memoire_autorisee', $conversation);
+            }
 
             return $conversation;
         });
@@ -77,6 +87,14 @@ class PatientAiController extends Controller
         }
 
         return redirect()->route('patientai.show', $conversation);
+    }
+
+    public function clearMemory(Request $request, PatientMemoryService $memory): RedirectResponse
+    {
+        $this->patient();
+        $deleted = $memory->clear();
+
+        return redirect()->route('patientai.index')->with('success', $deleted ? 'Mémoire effacée et désactivée dans toutes vos conversations.' : 'Mémoire désactivée dans toutes vos conversations, sans destruction pendant la suspension de conservation. Après sa levée, demandez à nouveau l’effacement.');
     }
 
     public function destroy(Request $request, AiConversation $conversation): RedirectResponse

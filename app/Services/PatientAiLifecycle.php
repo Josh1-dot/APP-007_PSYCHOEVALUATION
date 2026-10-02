@@ -19,7 +19,7 @@ class PatientAiLifecycle
     }
 
     /**
-     * @return list<array{uuid: string, status: string, consent_version: string, consent_text: string, consented_at: string, messages: list<array{role: string, content: string, created_at: mixed}>}>
+     * @return list<array{uuid: string, status: string, consent_version: string, consent_text: string, consented_at: string, memory_enabled: bool, memory_consent_version: ?string, memory_consented_at: ?string, memory: mixed, messages: list<array{role: string, content: string, created_at: mixed}>}>
      */
     public function export(Client $client): array
     {
@@ -30,6 +30,10 @@ class PatientAiLifecycle
                 'consent_version' => $conversation->consent_version,
                 'consent_text' => $conversation->consent_text,
                 'consented_at' => $conversation->consented_at->toIso8601String(),
+                'memory_enabled' => $conversation->memory_enabled,
+                'memory_consent_version' => $conversation->memory_consent_version,
+                'memory_consented_at' => $conversation->memory_consented_at?->toIso8601String(),
+                'memory' => $conversation->memory,
                 'messages' => $conversation->messages->map(fn ($message): array => $message->only(['role', 'content', 'created_at']))->all(),
             ])->all();
     }

@@ -68,8 +68,8 @@
 - [x] PAI-092 Tests publication et propriété.
 
 ## v0.8 — mémoire
-- [ ] PAI-100 Mémoire bornée/chiffrée.
-- [ ] PAI-101 Effacement/rétention/nouvelle conversation sans mémoire.
+- [x] PAI-100 Mémoire bornée/chiffrée.
+- [x] PAI-101 Effacement/rétention/nouvelle conversation sans mémoire.
 
 ## v0.9 — RAG
 - [ ] PAI-110 Modèles documents/chunks.
@@ -116,3 +116,7 @@ PAI-080/081 : PatientAppointmentTools listMyUpcomingAppointments/getMyNextAppoin
 
 ## Livraison v0.7 — 2 octobre 2026
 PAI-090 à 092 : PatientPublishedResultTool depuis PatientContext, publication réelle/tenant/propriétaire/version contrôlés, DTO readonly minimal, faits publiés distincts de l’explication déterministe ; exclusion draft/ai_generations/notes/réponses et contrôle strict du rendu provider. 26 cas / 157 assertions nouveaux ; PatientAI 202/2245 ; suite 245/2628. Preuves/limites dans docs/VALIDATION.md, critères exacts et cycle des anciennes réponses dans docs/ARCHITECTURE.md. Aucun v0.8+ commencé.
+
+
+## Livraison v0.8 — 2 octobre 2026
+PAI-100/101 : mémoire de préférence de présentation explicite/encrypted:array dans AiConversation, consentement dédié, DTO borné et modes avec/sans mémoire ; données métier prioritaires, aucun extracteur de texte libre. Rétention/hold/export/effacement/anonymisation P0 intégrés et testés. 39 nouveaux cas / 402 assertions ; PatientAI 241/2647 ; suite complète 284/3030. Pint/routes/Blade vérifiés. Migration additive créée, non appliquée en base applicative/Aiven. Décisions/bornes/limites : docs/ARCHITECTURE.md ; preuves : docs/VALIDATION.md. Aucun v0.9/RAG commencé, flag OFF.
