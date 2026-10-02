@@ -185,3 +185,20 @@ Migration additive `2026_10_02_073257_create_patientai_tables.php` : deux tables
 Factories et seeders de fixtures isolées disponibles uniquement pour démonstration locale/tests ; seeders non enregistrés dans le seeder principal et jamais exécutés par cette mission. Leur accord fictif ne constitue pas un accord utilisateur réel.
 
 P0 + v0.1 uniquement. Pas de PromptRegistry/SafetyPolicy v0.2, contexte v0.3, outils métier, guide indexé, résultats, rendez-vous, RAG ou mémoire résumée. La persistance visible est un historique de chat, jamais une note clinique ou une mémoire injectée au provider. Recette visuelle/E2E, MySQL/concurrence et déploiement restent à vérifier. La purge automatique en hébergement nécessite un scheduler effectif ; aucun scheduler distant n'est attesté.
+
+
+## Feature 019 — PatientAI v0.2 : prompt et politique (2 octobre 2026)
+
+`PromptRegistry::CURRENT_VERSION = patientai-v0.2`. `get(version)` fournit une définition contrôlée (version, instructions, réponses, motifs de refus) ; toute version inconnue échoue explicitement. `response(category, version)` utilise cette définition. Aucun prompt dispersé dans contrôleurs/vues, aucun endpoint d'extraction du prompt.
+
+Les instructions définissent PatientAI comme assistant numérique pour l'utilisation autorisée d'APP-007, ni psychologue, ni médecin, ni substitut au professionnel. Elles excluent diagnostic, invention, choix des réponses, manipulation/interprétation de scores sans mécanisme autorisé, accès aux informations professionnelles privées, secrets et élévation de droits déclarative.
+
+`SafetyPolicy` normalise le message avec le routeur v0.1 et applique des règles bornées avant le provider. Priorité : demandes internes/contournement/usurpation, manipulation de score/profil, choix/réponse au questionnaire, diagnostic. Les refus sont générés côté serveur à partir du registre, sans appel au provider, et stockés chiffrés comme les réponses habituelles ; leur métadonnée `provider` vaut `policy` (sinon `fake`). Les noms publics pour les affirmations d'identité viennent de la configuration, sans Joshua hardcodé dans la logique. Un message ne modifie aucun droit Laravel.
+
+Refus institutionnel : nom et rôle publics configurés en P0 ; à défaut, administrateur/responsable de la plateforme. Aucun chargement automatique de coordonnées privées. Le fallback indique explicitement l'absence d'accès à l'information, sans inventer résultat, rendez-vous, score ou donnée patient. Les salutations/remerciements/clôtures v0.1 sont conservés ; identité et capacités précisent les limites v0.2.
+
+`FakeLlmProvider` délègue ses réponses au registre. Le contrat `LlmProvider::reply(string $intent): string` reste inchangé : aucune transmission du message libre, du prompt, de données métier ou de secrets. La politique ne fait aucun accès SQL/réseau. Les vérifications Client existantes sont uniquement celles de propriété/accord v0.1 ; aucun Client comme contexte conversationnel ni contexte v0.3 ajouté.
+
+Aucune migration, modification des droits/consentement/rétention/export, dépendance, provider distant ou activation du flag. La version active est identifiable via le registre et le code Git ; elle n'est pas persistée par message dans le schéma v0.1 et aucune version n'est attribuée rétroactivement aux anciens messages. Le prompt texte est un contrat d'instructions ; le fake ne l'interprète pas avec un LLM, il utilise les réponses/règles déterministes du même registre.
+
+Limites : règles lexicales françaises/anglaises simples, non exhaustives ; formulations ambiguës possibles et faux positifs possibles. Une demande non reconnue reçoit toujours le fallback sans données. Aucune garantie de reconnaissance universelle ou d'évaluation d'un fournisseur réel, aucun RAG, outil métier, mémoire ou développement v0.3+. Le hardening v1.0 reste distinct, malgré les refus et l'anti-usurpation de base demandés pour v0.2.

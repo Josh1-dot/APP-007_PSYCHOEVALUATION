@@ -38,9 +38,9 @@
 - [x] PAI-034 Commit Git descriptif.
 
 ## v0.2 — politique/prompt
-- [ ] PAI-040 PromptRegistry versionné.
-- [ ] PAI-041 SafetyPolicy de base.
-- [ ] PAI-042 Tests refus/diagnostic/invention/réponse au questionnaire.
+- [x] PAI-040 PromptRegistry versionné.
+- [x] PAI-041 SafetyPolicy de base.
+- [x] PAI-042 Tests refus/diagnostic/invention/réponse au questionnaire.
 
 ## v0.3 — contexte
 - [ ] PAI-050 PatientContextFactory minimal.
@@ -92,3 +92,7 @@
 
 ## Livraison P0 + v0.1 — 2 octobre 2026
 Décisions et limites dans docs/ARCHITECTURE.md ; preuves dans docs/VALIDATION.md. PAI-031 intégré à l'export, l'anonymisation et la purge avec suspensions. 33 cas PatientAI / 237 assertions ; suite 76 / 620. PAI-034 correspond au commit de livraison contenant ce suivi. Aucun statut de v0.2+ modifié ; déploiement et recette navigateur non réalisés.
+
+
+## Livraison v0.2 — 2 octobre 2026
+PAI-040 à 042 implémentées/testées : PromptRegistry patientai-v0.2, SafetyPolicy déterministe avant provider, refus/identité/fallback contrôlés. Tests PatientAI 68/1100 ; suite complète 111/1484. Détails et limites dans docs/ARCHITECTURE.md et docs/VALIDATION.md. Aucun développement v0.3+, aucune tâche v1.0 déclarée terminée.

@@ -9,7 +9,7 @@ use RuntimeException;
 
 class PatientAiChat
 {
-    public function __construct(public LlmProvider $provider, public ConversationIntentRouter $router) {}
+    public function __construct(public LlmProvider $provider, public ConversationIntentRouter $router, public SafetyPolicy $policy) {}
 
     public function send(AiConversation $conversation, string $message): void
     {
@@ -22,12 +22,13 @@ class PatientAiChat
             $conversation = AiConversation::whereKey($conversation->id)->lockForUpdate()->firstOrFail();
             abort_unless($conversation->user_id === auth()->id() && $conversation->client_id === $client->id && $conversation->status === 'active', 409);
             abort_if(app(PatientAiLifecycle::class)->expired($conversation), 410);
-            $reply = $this->provider->reply($this->router->route($message));
+            $refusal = $this->policy->refusal($message);
+            $reply = $refusal ?? $this->provider->reply($this->router->route($message));
             if (trim($reply) === '' || mb_strlen($reply) > 10000) {
                 throw new RuntimeException('Invalid provider response.');
             }
             $conversation->messages()->create(['role' => 'patient', 'content' => $message]);
-            $conversation->messages()->create(['role' => 'assistant', 'content' => $reply, 'provider' => 'fake']);
+            $conversation->messages()->create(['role' => 'assistant', 'content' => $reply, 'provider' => $refusal === null ? 'fake' : 'policy']);
             $conversation->touch();
             Access::audit('patientai.message_envoye', $conversation);
         });

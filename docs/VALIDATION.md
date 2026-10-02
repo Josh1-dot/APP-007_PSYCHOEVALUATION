@@ -188,3 +188,18 @@ Preuves : authentification, quatre rôles non-patient rejetés, compte inactif, 
 PAI-031 : export JSON des messages vérifié même flag OFF ; suppression patient et cascade ; retrait sous suspension conservant les messages/export mais interdisant l'envoi ; anonymisation réelle du dossier via route existante effaçant conversations/messages même flag OFF ; expiration à la borne de 30 jours, refus 410 après borne ; purge explicite tenant laissant autre tenant et suspension intacts ; commande globale testée. La migration additive est exécutée par RefreshDatabase sur SQLite, pas sur la base applicative ni Aiven.
 
 Limites : aucune recette navigateur/mobile/E2E, aucune validation MySQL ou concurrence réelle, aucune activation/déploiement distant ni test scheduler en production. Les contrôles HTTP simulés et Blade compilé ne prouvent pas le rendu visuel. Aucun développement v0.2+. Le skill testing-best-practices demandé par AGENTS.md n'a pas été retrouvé dans les emplacements locaux disponibles ; les conventions PHPUnit du projet ont été suivies.
+
+
+## Feature 019 — PatientAI v0.2 — 2 octobre 2026
+
+- `php artisan test --compact tests/Feature/PatientAiTest.php tests/Feature/PatientAiPolicyTest.php` : **68 cas, 1100 assertions réussies**, SQLite en mémoire.
+- `php artisan test --compact` : **111 tests, 1484 assertions réussies** ; 76 cas préexistants conservés.
+- `vendor/bin/pint --dirty --format agent` et `git diff --check` : réussis.
+
+35 nouveaux cas dans PatientAiPolicyTest : version explicite patientai-v0.2 et rejet d'une version inconnue, instructions/identité/capacités, 30 demandes de refus françaises/anglaises via parcours HTTP simulé, contact configurable et fallback sans contact, usurpation sans accès à une autre conversation, 21 variantes sociales inchangées, absence d'invention pour résultats/scores/rendez-vous/aide site non disponible.
+
+Chaque cas de refus vérifie que le provider n'est pas appelé, que les deux messages persistent, que la réponse correspond à la catégorie, que le prompt complet est absent de la réponse et le texte utilisateur absent de l’audit, que le rôle patient ne change pas, et qu'aucune table métier clinique n'est interrogée. La politique/routeur/fake sont aussi testés sans SQL. Http::preventStrayRequests, fake et Http::assertNothingSent couvrent l'absence de requête HTTP externe. Revue statique : aucun client HTTP/SQL dans PromptRegistry/SafetyPolicy/FakeLlmProvider ; aucun secret ni .env lu pour construire le contexte, aucun nom institutionnel hardcodé dans la logique métier.
+
+La suite v0.1 reste verte : isolation, chiffrement, CSRF/XSS, flag, consentement, limites, panne provider et cycle export/effacement/rétention. Aucun appel OpenAI/API/réseau externe, aucune clé API utilisée, aucune migration applicative/Aiven, aucun déploiement. Le skill testing-best-practices reste introuvable dans les emplacements locaux disponibles ; conventions PHPUnit existantes suivies.
+
+Limites : tests locaux SQLite et HTTP simulé, sans navigateur/E2E ni concurrence MySQL. Règles lexicales bornées, pas de promesse de résistance universelle aux contournements. Prompt actif identifié par registre/Git, sans nouvelle colonne de version par message. v0.3 et versions suivantes non commencées.

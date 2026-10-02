@@ -49,3 +49,8 @@ Réponse, scoring, interprétation IA, validation humaine et publication distinc
 ## 019 — PatientAI
 
 **P0 + v0.1 implémentés et testés localement** (2 octobre 2026). Chat patient déterministe sans réseau, accord distinct, isolation tenant/propriétaire, chiffrement, audit métadonnées et cycle de vie export/effacement/purge. 33 cas dédiés / 237 assertions ; suite 76 / 620. Flag OFF par défaut ; migration non appliquée en production, recette navigateur et scheduler distant non validés. Feature 019 globale reste **PARTIAL** : v0.2 à v1.0 non commencées.
+
+
+### 019 — livraison v0.2
+
+PromptRegistry `patientai-v0.2` et SafetyPolicy de base implémentés/testés localement : identité, absence d'invention, refus diagnostic/questionnaire/manipulation/interne, contournements simples et contact public configurable. PatientAI : 68 cas / 1100 assertions ; suite complète 111 / 1484. Aucun provider réel ni contexte métier ; flag OFF par défaut. Feature globale PARTIAL, v0.3 à v1.0 non commencées ; hardening complet non revendiqué.

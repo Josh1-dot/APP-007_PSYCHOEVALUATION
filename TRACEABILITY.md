@@ -105,3 +105,11 @@ Aucune validation métier officielle de la matrice de permissions, du format Enn
 | v0.2 à v1.0 | Non implémentées. Aucun provider réel, contexte métier, outil, RAG ou mémoire résumée |
 
 Preuves locales SQLite uniquement ; migration applicative/Aiven, déploiement, scheduler distant, concurrence MySQL et recette navigateur non validés.
+
+
+## 019 — PatientAI v0.2
+
+- PAI-040 : app/Services/PromptRegistry.php, version explicite patientai-v0.2, instructions/réponses/motifs centralisés et version inconnue refusée.
+- PAI-041 : app/Services/SafetyPolicy.php ; PatientAiChat applique les refus avant provider ; FakeLlmProvider utilise le registre, contrat LlmProvider inchangé ; normalisation partagée avec ConversationIntentRouter.
+- PAI-042 : tests/Feature/PatientAiPolicyTest.php, 35 nouveaux cas ; tests PatientAI 68/1100, suite 111/1484 ; refus sans provider, absence de SQL clinique/HTTP, identité, usurpation, fallback et salutations v0.1.
+- Aucun contexte métier v0.3 ni version ultérieure ; tâches v1.0 non clôturées. Version active via registre/Git, sans historique de version persisté par message.
