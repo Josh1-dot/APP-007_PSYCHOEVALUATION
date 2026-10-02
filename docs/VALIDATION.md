@@ -337,3 +337,62 @@ Priorité vérifiée sans appel RAG : rendez-vous, évaluations, résultats, que
 Migration et factories utilisées dans les fixtures SQLite ; seeder optionnel non exécuté ; aucun import, revue humaine réelle, approbation/indexation ou migration exécuté en base applicative/Aiven, aucun déploiement. Aucun secret ajouté au contrôle ciblé, aucun .env modifié ; feature flag OFF. Aucune API/OpenAI/embedding distant/vector DB externe ni sortie réseau effectuée. Aucun v1.0/hardening général commencé. Skill testing-best-practices demandé par AGENTS introuvable localement, conventions PHPUnit existantes suivies.
 
 Limites : corpus opérationnel exige migration puis import/revue humaine attestée/approbation/indexation par un opérateur habilité ; aucune revue réelle fabriquée à partir de l’ancienne approbation technique v0.5. Fenêtre lexicale 50 documents, pas de synonymes/sémantique ni synthèse libre ; pertinence peut manquer une source hors fenêtre. Chunking peut couper mots/phrases. Les reçus sont un registre applicatif d’attestation, pas une preuve cryptographique de lecture humaine ni un audit externe inviolable. Pas de MySQL/concurrence réelle/E2E/navigateur/production ; le verrou de version est testé fonctionnellement sur SQLite. Réponses/citations anciennes conservées selon P0 après retrait d’une source ; nouvelles recherches refusées. Les tables RAG sont des connaissances générales, pas un dossier patient ou ClinicalNote, et ne remplacent jamais les outils métier.
+
+## Feature 019 — PatientAI v1.0 — statut documentaire (2 octobre 2026)
+
+### État réel vérifié dans l’environnement local
+
+- `php artisan test --compact tests/Feature/PatientAiTest.php tests/Feature/PatientAiPolicyTest.php tests/Feature/PatientAiContextTest.php tests/Feature/PatientAiAssessmentTest.php tests/Feature/PatientAiHelpTest.php tests/Feature/PatientAiAppointmentTest.php tests/Feature/PatientAiPublishedResultTest.php tests/Feature/PatientAiMemoryTest.php tests/Feature/PatientAiRagTest.php` : **284 tests passés, 3 056 assertions**.
+- `php artisan test --compact` : **327 tests passés, 3 437 assertions**.
+- `vendor/bin/pint --dirty --format agent` : exécuté et conforme pour les fichiers modifiés du projet existant ; la documentation n’a pas été modifiée dans le code applicatif.
+
+### Verdict v1.0 documenté
+
+- PatientAI v1.0 code-complete : **PASS**
+- PatientAI v1.0 local-test-complete : **PARTIAL**
+- PatientAI v1.0 production-ready : **NON**
+
+### PASS (validé localement)
+
+- SafetyPolicy
+- rate limiting serveur
+- audit sans contenu sensible
+- observabilité locale existante
+- rétention
+- export/effacement
+- kill switch
+- politique provider fake / fail-closed
+- confidentialité provider
+- tests adversariaux locaux
+- non-régression v0.1 → v0.9
+
+### PARTIAL
+
+- MySQL / migrations : validation SQLite uniquement ; aucune validation MySQL/Aiven réelle effectuée.
+- concurrence réelle : protections applicatives présentes, mais pas de validation MySQL/concurrence réelle.
+- validation locale globale : la suite est verte, mais le niveau de preuve de production n’a pas été exécuté.
+
+### NOT EXECUTED
+
+- E2E navigateur réel
+- déploiement Render/Aiven
+- provider LLM réel
+- validation scheduler de production
+
+### BLOCKERS production
+
+- validation MySQL réelle
+- E2E navigateur réel
+- validation Aiven/Render
+- provider réel si un fournisseur externe est nécessaire
+- vérification scheduler production
+
+### Conditions documentées
+
+- Le feature flag PatientAI reste **OFF**.
+- Aucun OpenAI / API externe n’est activé dans cet environnement.
+- Aucun déploiement n’a été effectué.
+- Aucune migration Aiven n’a été appliquée.
+- Aucun statut de production n’est revendiqué.
+
+La hardening v1.0 est donc documentée comme code-complete et localement vérifiée dans les limites du dépôt, sans prétendre à une validation de production non exécutée.

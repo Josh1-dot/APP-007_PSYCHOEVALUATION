@@ -80,14 +80,21 @@
 - [x] PAI-115 Défense prompt injection.
 - [x] PAI-116 Tests absence de résultat/information interdite.
 
-## v1.0 — hardening
-- [ ] PAI-120 Refus institutionnel et contact public configurable.
-- [ ] PAI-121 Anti-usurpation.
-- [ ] PAI-122 Rate limiting/kill switch.
-- [ ] PAI-123 Tests adversariaux.
-- [ ] PAI-124 Observabilité sans contenu sensible.
-- [ ] PAI-125 E2E sécurité/UX.
-- [ ] PAI-126 Revue finale rétention/export/effacement/confidentialité.
+## v1.0 — hardening (statut documentaire réel)
+- [x] PAI-120 Refus institutionnel et contact public configurable : vérifié localement dans le code et les tests d’anti-usurpation.
+- [x] PAI-121 Anti-usurpation : contrôles de contexte, IDOR et refus répétés validés en tests locaux.
+- [x] PAI-122 Rate limiting / kill switch : rate limiting serveur et feature flag OFF validés dans la suite locale.
+- [x] PAI-123 Tests adversariaux : couverture locale de prompt injection, extraction, usurpation, IDOR et provider tampering.
+- [x] PAI-124 Observabilité sans contenu sensible : audit et métadonnées locales vérifiés sans payload sensible.
+- [ ] PAI-125 E2E navigateur réel : non exécuté dans cet environnement.
+- [ ] PAI-126 Revue finale produit / MySQL / Aiven / scheduler / provider réel : validation production encore requise.
+
+### Statut factuel v1.0
+- PatientAI v1.0 code-complete : **PASS**
+- PatientAI v1.0 local-test-complete : **PARTIAL**
+- PatientAI v1.0 production-ready : **NON**
+
+Le hardening v1.0 est documenté comme code-complete et couvert par la validation locale disponible, sans transformer les validations non exécutées en preuve de production.
 
 
 ## Livraison P0 + v0.1 — 2 octobre 2026

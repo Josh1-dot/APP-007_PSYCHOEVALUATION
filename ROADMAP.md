@@ -83,3 +83,6 @@ Mémoire contrôlée de présentation livrée/testée : préférence explicite c
 
 ### 019 — livraison v0.9
 RAG local déterministe livré/testé : documents/chunks chiffrés, classification 5 audiences, revue/approbation humaines attestées, index lexical borné, contrôle tenant/assignation, citation avec provenance sûre. Guide v0.5 préservé, outils métier prioritaires ; aucune dépendance/réseau/vector DB/embedding. PatientAI 284/3053 ; suite 327/3436. Feature globale PARTIAL, v1.0 non commencée ; flag OFF, migration et corpus humain à préparer selon procédure, aucun déploiement. Limites dans docs/VALIDATION.md.
+
+### 019 — PatientAI v1.0 readiness (documenté)
+Le hardening v1.0 est **code-complete** dans le dépôt et couvert par la validation locale disponible : 284 tests PatientAI / 3 056 assertions, puis 327 tests complets / 3 437 assertions. Le statut documenté reste **PARTIAL** pour la validation locale globale et **NON** pour la production-ready, parce que MySQL réel, navigateur E2E, Aiven/Render, provider externe et scheduler de production n’ont pas été exécutés. Le feature flag demeure OFF et aucun déploiement / migration Aiven n’a été effectué.

@@ -163,3 +163,10 @@ Preuves locales SQLite uniquement ; migration applicative/Aiven, déploiement, s
 - PAI-114 : PatientRagResult/ChunkData/Provenance readonly, source publique/version/section observables sans source interne ni métadonnée professionnelle.
 - PAI-115 : PromptRegistry patientai-v0.9, documents comme données distinctes, formatter/fake/rendu exact et priorité SafetyPolicy/outils/guide avant retrieval, mémoire sans influence sur les droits.
 - PAI-116 : PatientAiRagTest 43 cas / 406 assertions ; PatientAI 284/3053, suite 327/3436. Procédure/bornes/limites : docs/ARCHITECTURE.md, docs/VALIDATION.md et knowledge/09-rag-workflow.md. Aucun v1.0, source clinique automatique ou provider distant ; flag OFF.
+
+## 019 — PatientAI v1.0 readiness (documenté)
+- Code-complete : **PASS**
+- Local-test-complete : **PARTIAL**
+- Production-ready : **NON**
+- Preuves : PatientAI 284/3056 ; suite complète 327/3437 ; feature flag OFF ; aucun OpenAI / API externe / déploiement Aiven / rendus navigateur E2E exécutés.
+- Blocages production documentés : MySQL réel, navigateur E2E, Aiven/Render, provider réel, scheduler de production.
