@@ -54,3 +54,8 @@ Réponse, scoring, interprétation IA, validation humaine et publication distinc
 ### 019 — livraison v0.2
 
 PromptRegistry `patientai-v0.2` et SafetyPolicy de base implémentés/testés localement : identité, absence d'invention, refus diagnostic/questionnaire/manipulation/interne, contournements simples et contact public configurable. PatientAI : 68 cas / 1100 assertions ; suite complète 111 / 1484. Aucun provider réel ni contexte métier ; flag OFF par défaut. Feature globale PARTIAL, v0.3 à v1.0 non commencées ; hardening complet non revendiqué.
+
+
+### 019 — livraison v0.3
+
+Contexte d'identité serveur minimal implémenté/testé : DTO readonly userId/tenantId/clientId, résolution session/User/relations et filtres de propriété dans contrôleur/orchestrateur. Tests PatientAI 97/1530 ; suite 140/1910. Aucun identifiant ni donnée métier envoyé au provider. Aucun outil évaluation ; v0.4 à v1.0 non commencées, feature globale PARTIAL, flag OFF par défaut. Aucun déploiement ni validation MySQL/E2E.

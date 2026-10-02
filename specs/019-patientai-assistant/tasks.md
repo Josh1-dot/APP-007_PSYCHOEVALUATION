@@ -43,9 +43,9 @@
 - [x] PAI-042 Tests refus/diagnostic/invention/réponse au questionnaire.
 
 ## v0.3 — contexte
-- [ ] PAI-050 PatientContextFactory minimal.
-- [ ] PAI-051 DTO sans modèle Eloquent complet.
-- [ ] PAI-052 Tests IDOR/propriété.
+- [x] PAI-050 PatientContextFactory minimal.
+- [x] PAI-051 DTO sans modèle Eloquent complet.
+- [x] PAI-052 Tests IDOR/propriété.
 
 ## v0.4 — évaluations
 - [ ] PAI-060 `list_my_assessments`.
@@ -96,3 +96,7 @@ Décisions et limites dans docs/ARCHITECTURE.md ; preuves dans docs/VALIDATION.m
 
 ## Livraison v0.2 — 2 octobre 2026
 PAI-040 à 042 implémentées/testées : PromptRegistry patientai-v0.2, SafetyPolicy déterministe avant provider, refus/identité/fallback contrôlés. Tests PatientAI 68/1100 ; suite complète 111/1484. Détails et limites dans docs/ARCHITECTURE.md et docs/VALIDATION.md. Aucun développement v0.3+, aucune tâche v1.0 déclarée terminée.
+
+
+## Livraison v0.3 — 2 octobre 2026
+PAI-050 à 052 implémentées/testées : PatientContextFactory depuis identité Laravel authentifiée, DTO immuable userId/tenantId/clientId, intégration autorisation/orchestration et tests IDOR. Tests contexte 29/302 ; PatientAI 97/1530 ; suite complète 140/1910. Aucun contexte transmis au provider, aucune donnée clinique/évaluation, aucun outil v0.4. Décisions et preuves : docs/ARCHITECTURE.md, docs/VALIDATION.md.

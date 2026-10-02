@@ -7,6 +7,8 @@ use App\Models\Client;
 use App\Services\Access;
 use App\Services\PatientAiChat;
 use App\Services\PatientAiLifecycle;
+use App\Services\PatientContext;
+use App\Services\PatientContextFactory;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,37 +17,37 @@ use Throwable;
 
 class PatientAiController extends Controller
 {
-    private function patient(Request $request): Client
+    public function __construct(public PatientContextFactory $contexts) {}
+
+    private function patient(): PatientContext
     {
         abort_unless(config('patientai.enabled'), 404);
-        abort_unless($request->user()->active && $request->user()->role === 'patient', 403);
-        $client = $request->user()->client;
-        abort_unless($client && $client->tenant_id === $request->user()->tenant_id && ! $client->anonymized_at, 403);
 
-        return $client;
+        return $this->contexts->fromAuthenticatedUser();
     }
 
-    private function authorizeConversation(Request $request, AiConversation $conversation): void
+    private function authorizeConversation(AiConversation $conversation): PatientContext
     {
-        $client = $this->patient($request);
-        abort_unless($conversation->tenant_id === $request->user()->tenant_id && $conversation->user_id === $request->user()->id && $conversation->client_id === $client->id, 404);
+        $context = $this->patient();
+        abort_unless($context->owns($conversation->tenant_id, $conversation->user_id, $conversation->client_id), 404);
+
+        return $context;
     }
 
     public function index(Request $request): View
     {
-        $client = $this->patient($request);
+        $context = $this->patient();
 
-        return view('modules.patientai', ['conversations' => AiConversation::where('user_id', $request->user()->id)->where('client_id', $client->id)->latest('updated_at')->paginate(20), 'conversation' => null, 'messages' => null]);
+        return view('modules.patientai', ['conversations' => AiConversation::where('tenant_id', $context->tenantId)->where('user_id', $context->userId)->where('client_id', $context->clientId)->latest('updated_at')->paginate(20), 'conversation' => null, 'messages' => null]);
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $client = $this->patient($request);
+        $this->patient();
         $request->validate(['accepted' => 'accepted']);
-        $conversation = DB::transaction(function () use ($request, $client): AiConversation {
-            $client = Client::whereKey($client->id)->lockForUpdate()->firstOrFail();
-            abort_unless($client->user_id === $request->user()->id && ! $client->anonymized_at, 403);
-            $conversation = AiConversation::create(['user_id' => $request->user()->id, 'client_id' => $client->id, 'consent_version' => config('patientai.consent_version'), 'consent_text' => config('patientai.consent_text'), 'consented_at' => now()]);
+        $conversation = DB::transaction(function (): AiConversation {
+            $context = $this->contexts->fromAuthenticatedUser(lockClient: true);
+            $conversation = AiConversation::create(['tenant_id' => $context->tenantId, 'user_id' => $context->userId, 'client_id' => $context->clientId, 'consent_version' => config('patientai.consent_version'), 'consent_text' => config('patientai.consent_text'), 'consented_at' => now()]);
             Access::audit('patientai.conversation_creee', $conversation);
 
             return $conversation;
@@ -56,7 +58,7 @@ class PatientAiController extends Controller
 
     public function show(Request $request, AiConversation $conversation, PatientAiLifecycle $lifecycle): View
     {
-        $this->authorizeConversation($request, $conversation);
+        $this->authorizeConversation($conversation);
         abort_if($lifecycle->expired($conversation), 410, 'Conversation expirée.');
 
         return view('modules.patientai', ['conversations' => null, 'conversation' => $conversation, 'messages' => $conversation->messages()->latest('id')->paginate(40)]);
@@ -64,7 +66,7 @@ class PatientAiController extends Controller
 
     public function message(Request $request, AiConversation $conversation, PatientAiChat $chat, PatientAiLifecycle $lifecycle): RedirectResponse
     {
-        $this->authorizeConversation($request, $conversation);
+        $this->authorizeConversation($conversation);
         abort_if($lifecycle->expired($conversation), 410, 'Conversation expirée.');
         abort_unless($conversation->status === 'active', 409, 'Accord PatientAI retiré.');
         $data = $request->validate(['content' => 'required|string|max:'.max(1, (int) config('patientai.max_message_length'))]);
@@ -79,11 +81,13 @@ class PatientAiController extends Controller
 
     public function destroy(Request $request, AiConversation $conversation): RedirectResponse
     {
-        $this->authorizeConversation($request, $conversation);
+        $this->authorizeConversation($conversation);
         $deleted = DB::transaction(function () use ($conversation): bool {
-            $client = Client::whereKey($conversation->client_id)->lockForUpdate()->firstOrFail();
-            $conversation = AiConversation::whereKey($conversation->id)->lockForUpdate()->firstOrFail();
-            abort_unless($client->user_id === auth()->id() && $conversation->user_id === auth()->id() && $conversation->client_id === $client->id, 404);
+            $context = $this->contexts->fromAuthenticatedUser(lockClient: true);
+            $client = Client::select(['id', 'retention_hold'])->where('tenant_id', $context->tenantId)->whereKey($context->clientId)->firstOrFail();
+            $conversation = AiConversation::where('tenant_id', $context->tenantId)->where('user_id', $context->userId)
+                ->where('client_id', $context->clientId)->whereKey($conversation->id)->lockForUpdate()->firstOrFail();
+            abort_unless($context->owns($conversation->tenant_id, $conversation->user_id, $conversation->client_id), 404);
             if ($client->retention_hold) {
                 $conversation->update(['status' => 'withdrawn']);
                 Access::audit('patientai.accord_retire', $conversation);

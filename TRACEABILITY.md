@@ -113,3 +113,11 @@ Preuves locales SQLite uniquement ; migration applicative/Aiven, déploiement, s
 - PAI-041 : app/Services/SafetyPolicy.php ; PatientAiChat applique les refus avant provider ; FakeLlmProvider utilise le registre, contrat LlmProvider inchangé ; normalisation partagée avec ConversationIntentRouter.
 - PAI-042 : tests/Feature/PatientAiPolicyTest.php, 35 nouveaux cas ; tests PatientAI 68/1100, suite 111/1484 ; refus sans provider, absence de SQL clinique/HTTP, identité, usurpation, fallback et salutations v0.1.
 - Aucun contexte métier v0.3 ni version ultérieure ; tâches v1.0 non clôturées. Version active via registre/Git, sans historique de version persisté par message.
+
+
+## 019 — PatientAI v0.3
+
+- PAI-050 : app/Services/PatientContextFactory.php, résolution depuis auth()->id(), User::tenant()/client(), lectures limitées et identité revalidée dans les transactions.
+- PAI-051 : app/Services/PatientContext.php, DTO final readonly avec exactement userId/tenantId/clientId ; PatientAiController/PatientAiChat autorisent et filtrent les conversations depuis ce contexte, jamais transmis au provider.
+- PAI-052 : tests/Feature/PatientAiContextTest.php, 29 cas/302 assertions : identité invalide, relations obsolètes, isolation bidirectionnelle, paramètres IDOR, propriété falsifiée, déclarations dans le texte, absence de SQL clinique et HTTP, fallback v0.2.
+- PatientAI 97/1530 ; suite complète 140/1910. Aucun outil métier v0.4, migration, provider distant ou déploiement. Limites détaillées dans docs/VALIDATION.md.

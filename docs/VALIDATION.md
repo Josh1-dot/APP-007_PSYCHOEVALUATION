@@ -203,3 +203,21 @@ Chaque cas de refus vérifie que le provider n'est pas appelé, que les deux mes
 La suite v0.1 reste verte : isolation, chiffrement, CSRF/XSS, flag, consentement, limites, panne provider et cycle export/effacement/rétention. Aucun appel OpenAI/API/réseau externe, aucune clé API utilisée, aucune migration applicative/Aiven, aucun déploiement. Le skill testing-best-practices reste introuvable dans les emplacements locaux disponibles ; conventions PHPUnit existantes suivies.
 
 Limites : tests locaux SQLite et HTTP simulé, sans navigateur/E2E ni concurrence MySQL. Règles lexicales bornées, pas de promesse de résistance universelle aux contournements. Prompt actif identifié par registre/Git, sans nouvelle colonne de version par message. v0.3 et versions suivantes non commencées.
+
+
+## Feature 019 — PatientAI v0.3 — 2 octobre 2026
+
+- `php artisan test --compact tests/Feature/PatientAiContextTest.php` : **29 cas, 302 assertions réussies**, SQLite en mémoire.
+- `php artisan test --compact tests/Feature/PatientAiTest.php tests/Feature/PatientAiPolicyTest.php tests/Feature/PatientAiContextTest.php` : **97 cas, 1530 assertions réussies**.
+- `php artisan test --compact` : **140 tests, 1910 assertions réussies** ; tous les cas préexistants v0.1/v0.2 et autres features restent verts. Le nombre d'assertions dans les tests existants inspectant chaque requête SQL augmente avec les lectures minimales d'autorisation.
+- `vendor/bin/pint --dirty --format agent` et `git diff --check` : réussis.
+
+Preuves nouvelles : DTO contenant uniquement trois entiers immuables ; User/tenant/Client résolus depuis auth()->id() et les relations réelles, trois requêtes minimales sans identité civile/champ clinique ; absence d'identité pour invité, non-patient, compte inactif, dossier absent/archivé/anonymisé ou Client dans un tenant incohérent ; relation Client falsifiée en mémoire ignorée et compte désactivé en base refusé malgré User de session obsolète.
+
+Isolation dans les deux directions entre patients du même tenant et entre tenants : refus lecture/envoi/suppression/liste et appel direct à PatientAiChat d'une conversation étrangère. Tests de paramètres arbitraires client_id/user_id/tenant_id/conversation_id/conversation_uuid/patient_id : contexte inchangé, création rattachée au propriétaire de session, envoi limité à la conversation autorisée. Trois cas de conversation contenant une seule composante de propriété falsifiée sont refusés.
+
+Cinq affirmations de texte (patient 42, client_id=42, Joshua, administrateur, dossier de Jean) testées avec capture du contexte réellement résolu par contrôleur et orchestrateur : aucune modification des trois identifiants. Provider mocké pour vérifier qu'un envoi reçoit uniquement greeting, sans DTO/identifiant. Requêtes d'évaluations/score/résultat vérifiées au fallback v0.2, sans SELECT clinique ou organisation partenaire, et sans sélection de champs sensibles Client. Http::preventStrayRequests/fake/assertNothingSent couvrent l'absence de requête HTTP externe ; aucune clé ou API OpenAI utilisée.
+
+Le premier test de projection a signalé le SELECT * interne de EXISTS (sans hydratation de tenant) ; la requête d'existence a été rendue explicitement limitée à tenants.id puis le test a été relancé avec succès. Tests, migrations de fixture et données fictives restent exclusivement sur SQLite en mémoire ; aucune migration nouvelle ou appliquée en base applicative/Aiven. Skill testing-best-practices introuvable dans les emplacements locaux disponibles ; conventions PHPUnit existantes suivies.
+
+Limites : aucun E2E/navigateur, aucune validation MySQL/concurrence réelle ni déploiement. Le DTO n'est ni un droit durable ni un contexte clinique ; aucune API de contexte exposée. v0.4 et versions suivantes non commencées.
