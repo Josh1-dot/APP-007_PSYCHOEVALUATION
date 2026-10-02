@@ -4,5 +4,5 @@ namespace App\Services;
 
 interface LlmProvider
 {
-    public function reply(string $intent): string;
+    public function reply(string $intent, ?PatientAssessmentResult $assessments = null): string;
 }

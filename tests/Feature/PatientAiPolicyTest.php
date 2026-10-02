@@ -33,9 +33,10 @@ class PatientAiPolicyTest extends TestCase
     public function test_registry_version_is_explicit_and_unknown_versions_fail_closed(): void
     {
         $registry = new PromptRegistry;
-        $definition = $registry->get('patientai-v0.2');
-        $this->assertSame('patientai-v0.2', PromptRegistry::CURRENT_VERSION);
-        $this->assertSame('patientai-v0.2', $definition['version']);
+        $this->assertSame('patientai-v0.2', $registry->get('patientai-v0.2')['version']);
+        $definition = $registry->get();
+        $this->assertSame('patientai-v0.4', PromptRegistry::CURRENT_VERSION);
+        $this->assertSame('patientai-v0.4', $definition['version']);
         $this->assertSame($definition, $registry->get());
         foreach (['assistant numérique', 'psychologue', 'médecin', 'diagnostic', 'N’invente', 'Ne réponds jamais', 'score', 'secret', 'Laravel', 'réseau'] as $rule) {
             $this->assertStringContainsString(str_replace('’', "'", $rule), $definition['instructions']);

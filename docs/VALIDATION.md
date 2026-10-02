@@ -221,3 +221,21 @@ Cinq affirmations de texte (patient 42, client_id=42, Joshua, administrateur, do
 Le premier test de projection a signalé le SELECT * interne de EXISTS (sans hydratation de tenant) ; la requête d'existence a été rendue explicitement limitée à tenants.id puis le test a été relancé avec succès. Tests, migrations de fixture et données fictives restent exclusivement sur SQLite en mémoire ; aucune migration nouvelle ou appliquée en base applicative/Aiven. Skill testing-best-practices introuvable dans les emplacements locaux disponibles ; conventions PHPUnit existantes suivies.
 
 Limites : aucun E2E/navigateur, aucune validation MySQL/concurrence réelle ni déploiement. Le DTO n'est ni un droit durable ni un contexte clinique ; aucune API de contexte exposée. v0.4 et versions suivantes non commencées.
+
+
+## Feature 019 — PatientAI v0.4 — 2 octobre 2026
+
+- Tests outils `php artisan test --compact tests/Feature/PatientAiAssessmentTest.php` : **17 cas / 86 assertions réussis**.
+- Tests PatientAI `php artisan test --compact --filter=PatientAi` : **114 cas / 1595 assertions réussis**.
+- Suite complète `php artisan test --compact` : **157 tests / 1977 assertions réussis** (SQLite en mémoire).
+- `vendor/bin/pint --dirty --format agent`, compilation Blade puis vidage du cache, vérification evaluations.show et `git diff --check` : réussis ; aucune route modifiée.
+
+Couverture : liste vide, plusieurs évaluations, pagination bornée et filtre de statut, huit filtres invalides/identifiants refusés ; DTO exact, URL Laravel patient accessible, statuts source relus après changement ; UUID valide/invalide/inexistant, même tenant/autre tenant, inconnu et publication absente masqués uniformément. Relations définition/Interprétation d’un autre tenant et publication retirée masquées. Statut publie visible uniquement après publication attestée, sans contenu publié chargé.
+
+Capture provider : uniquement intention assessments et DTO readonly autorisé, aucune identité cible/modèle Eloquent. Requêtes SQL des outils inspectées sans colonnes answers/results/draft/published_content/ai_generations ni tables cliniques/rendez-vous. Snapshot de la table assessments inchangé après consultations. Fake/formatter testés sans aucune requête SQL ou HTTP. Un provider fabriquant statut/lien est refusé et aucun message n’est persisté. HTTP de consultation statut d’une évaluation étrangère retourne le même texte indisponible ; conversation étrangère refusée. Paramètres navigateur falsifiés ignorés et texte d’identité/client_id sans effet. Compte désactivé après authentification refusé par l’outil.
+
+Migration UUID : rollback/up testés avec passation préexistante, UUID valide backfill et données métier/timestamps inchangés, route numérique conservée. Aucun migrate appliqué à la base applicative/Aiven. Une fixture initiale oubliait le draft obligatoire et le routeur initial ne normalisait pas l’accent de « évaluation » ; corrigés puis tests concernés et suites relancés avec succès.
+
+Régressions v0.1/v0.2/v0.3 vertes : salutations, refus, consentement, chiffrement, CSRF/XSS, isolation, limites et rétention/export/effacement. Le test historique v0.3 du fallback exclut désormais la liste des évaluations, devenue autorisée v0.4 ; scores/résultats restent au fallback sans lecture métier. Version active PromptRegistry patientai-v0.4, ancienne version v0.2 toujours récupérable. Http::preventStrayRequests/fake/assertNothingSent et revue statique couvrent le parcours sans HTTP ; aucun client réseau/SQL dans le fake et le formatter, aucun OpenAI/API externe/clé utilisés. Diff et contrôle ciblé des secrets : aucun secret ajouté, fichiers .env non modifiés.
+
+Limites : routage lexical volontairement borné, filtres page/limit seulement disponibles côté service ; URLs en texte échappé dans les bulles. Migration additive nécessaire avant activation ; MySQL/Aiven, concurrence et recette navigateur/E2E non validés. Skill testing-best-practices introuvable localement, conventions PHPUnit existantes suivies. Feature flag OFF conservé. Outils strictement read-only, aucun v0.5+, RAG, aide questionnaire, résultat détaillé ou action métier.

@@ -48,9 +48,9 @@
 - [x] PAI-052 Tests IDOR/propriété.
 
 ## v0.4 — évaluations
-- [ ] PAI-060 `list_my_assessments`.
-- [ ] PAI-061 `get_my_assessment_status`.
-- [ ] PAI-062 Tests visibilité/statuts/liens serveur.
+- [x] PAI-060 `list_my_assessments`.
+- [x] PAI-061 `get_my_assessment_status`.
+- [x] PAI-062 Tests visibilité/statuts/liens serveur.
 
 ## v0.5 — guide et questionnaires
 - [ ] PAI-070 Valider le guide fonctionnel contre le portail réel.
@@ -100,3 +100,7 @@ PAI-040 à 042 implémentées/testées : PromptRegistry patientai-v0.2, SafetyPo
 
 ## Livraison v0.3 — 2 octobre 2026
 PAI-050 à 052 implémentées/testées : PatientContextFactory depuis identité Laravel authentifiée, DTO immuable userId/tenantId/clientId, intégration autorisation/orchestration et tests IDOR. Tests contexte 29/302 ; PatientAI 97/1530 ; suite complète 140/1910. Aucun contexte transmis au provider, aucune donnée clinique/évaluation, aucun outil v0.4. Décisions et preuves : docs/ARCHITECTURE.md, docs/VALIDATION.md.
+
+
+## Livraison v0.4
+PAI-060 à 062 implémentées/testées : PatientAssessmentTools, DTO minimaux readonly, statuts/liens Laravel et filtrage tenant/user/client/visibilité. Migration UUID additive sur Assessment réel, routes numériques conservées. Provider fake déterministe sans réseau ; rendu contrôlé pour empêcher l’invention. Voir docs/ARCHITECTURE.md et docs/VALIDATION.md pour règles exactes et preuves. 17 nouveaux cas / 86 assertions ; PatientAI 114/1595 ; suite complète 157/1977. Aucune tâche v0.5+ commencée.

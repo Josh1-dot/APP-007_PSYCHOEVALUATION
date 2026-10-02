@@ -20,6 +20,21 @@ class ConversationIntentRouter
         };
     }
 
+    /** @return array{tool: string, filters: array<string, string>, uuid: string}|null */
+    public function assessmentRequest(string $message): ?array
+    {
+        $normalized = $this->normalize($message);
+        $lists = ['quelles sont mes evaluations', 'montre moi mes evaluations', 'mes evaluations', 'ai je des evaluations en cours'];
+        if (in_array($normalized, $lists, true)) {
+            return ['tool' => 'list', 'filters' => $normalized === 'ai je des evaluations en cours' ? ['status' => 'en_cours'] : [], 'uuid' => ''];
+        }
+        if (preg_match('/^(?:quel est le statut de mon evaluation|statut de mon evaluation|statut evaluation)(?:\s+(.+?))?[?.!]*$/iu', Str::ascii(trim($message)), $matches)) {
+            return ['tool' => 'status', 'filters' => [], 'uuid' => trim($matches[1] ?? '', ' ?.!')];
+        }
+
+        return null;
+    }
+
     public function normalize(string $message): string
     {
         return trim(preg_replace('/[^a-z0-9]+/', ' ', Str::lower(Str::ascii($message))) ?? '');

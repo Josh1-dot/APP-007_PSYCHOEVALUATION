@@ -2,8 +2,18 @@
 
 namespace App\Models;
 
+use Illuminate\Support\Str;
+
 class Assessment extends TenantModel
 {
+    protected static function booted(): void
+    {
+        parent::booted();
+        static::creating(function (Assessment $assessment): void {
+            $assessment->uuid = (string) Str::uuid();
+        });
+    }
+
     public function client()
     {
         return $this->belongsTo(Client::class)->withTrashed();

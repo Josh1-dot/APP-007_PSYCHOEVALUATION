@@ -24,7 +24,17 @@ class PatientAiChat
             abort_unless($conversation->status === 'active', 409);
             abort_if(app(PatientAiLifecycle::class)->expired($conversation), 410);
             $refusal = $this->policy->refusal($message);
-            $reply = $refusal ?? $this->provider->reply($this->router->route($message));
+            $request = $refusal === null ? $this->router->assessmentRequest($message) : null;
+            if ($request !== null) {
+                $tools = app(PatientAssessmentTools::class);
+                $result = $request['tool'] === 'list' ? $tools->listMyAssessments($request['filters']) : $tools->getMyAssessmentStatus($request['uuid']);
+                $reply = $this->provider->reply('assessments', $result);
+                if ($reply !== (new PatientAssessmentFormatter)->format($result)) {
+                    throw new RuntimeException('Invalid assessment response.');
+                }
+            } else {
+                $reply = $refusal ?? $this->provider->reply($this->router->route($message));
+            }
             if (trim($reply) === '' || mb_strlen($reply) > 10000) {
                 throw new RuntimeException('Invalid provider response.');
             }

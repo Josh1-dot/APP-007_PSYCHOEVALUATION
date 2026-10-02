@@ -59,3 +59,7 @@ PromptRegistry `patientai-v0.2` et SafetyPolicy de base implémentés/testés lo
 ### 019 — livraison v0.3
 
 Contexte d'identité serveur minimal implémenté/testé : DTO readonly userId/tenantId/clientId, résolution session/User/relations et filtres de propriété dans contrôleur/orchestrateur. Tests PatientAI 97/1530 ; suite 140/1910. Aucun identifiant ni donnée métier envoyé au provider. Aucun outil évaluation ; v0.4 à v1.0 non commencées, feature globale PARTIAL, flag OFF par défaut. Aucun déploiement ni validation MySQL/E2E.
+
+
+### 019 — livraison v0.4
+Outils de liste/statut d’évaluations read-only implémentés et testés localement, autorisation PatientContext et DTO minimal. UUID ajouté au modèle réel ; migration non appliquée en production. Feature globale PARTIAL, v0.5 à v1.0 non commencées. Flag OFF, aucun réseau/provider distant ; limites SQLite/MySQL/E2E détaillées dans docs/VALIDATION.md.

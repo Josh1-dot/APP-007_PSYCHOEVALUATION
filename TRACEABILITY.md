@@ -121,3 +121,9 @@ Preuves locales SQLite uniquement ; migration applicative/Aiven, déploiement, s
 - PAI-051 : app/Services/PatientContext.php, DTO final readonly avec exactement userId/tenantId/clientId ; PatientAiController/PatientAiChat autorisent et filtrent les conversations depuis ce contexte, jamais transmis au provider.
 - PAI-052 : tests/Feature/PatientAiContextTest.php, 29 cas/302 assertions : identité invalide, relations obsolètes, isolation bidirectionnelle, paramètres IDOR, propriété falsifiée, déclarations dans le texte, absence de SQL clinique et HTTP, fallback v0.2.
 - PatientAI 97/1530 ; suite complète 140/1910. Aucun outil métier v0.4, migration, provider distant ou déploiement. Limites détaillées dans docs/VALIDATION.md.
+
+
+## 019 — PatientAI v0.4
+- PAI-060 : PatientAssessmentTools::listMyAssessments, filtres bornés et DTO PatientAssessmentData/Result.
+- PAI-061 : getMyAssessmentStatus, UUID validé, tenant/propriétaire/visibilité, erreurs non énumérables ; migration UUID et Assessment existants.
+- PAI-062 : PatientAiAssessmentTest ; intégration router/chat/fake/formatter, tests isolation, statuts/liens, projection minimale et absence HTTP. Preuves et limites : docs/VALIDATION.md.

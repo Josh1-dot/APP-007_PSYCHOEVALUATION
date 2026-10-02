@@ -227,7 +227,7 @@ class PatientAiContextTest extends TestCase
         DB::listen(function ($query) use (&$queries): void {
             $queries[] = $query->sql;
         });
-        foreach (['Quelles sont mes évaluations ?', 'Quel est mon score ?', 'Quel est mon résultat ?'] as $message) {
+        foreach (['Quel est mon score ?', 'Quel est mon résultat ?'] as $message) {
             $this->post('/patient/assistant/'.$conversation->uuid.'/messages', ['content' => $message])->assertRedirect()->assertSessionHasNoErrors();
             $answer = AiMessage::where('role', 'assistant')->latest('id')->firstOrFail()->content;
             $this->assertSame((new PromptRegistry)->response('unknown'), $answer);

@@ -6,18 +6,18 @@ use InvalidArgumentException;
 
 class PromptRegistry
 {
-    public const CURRENT_VERSION = 'patientai-v0.2';
+    public const CURRENT_VERSION = 'patientai-v0.4';
 
     /**
      * @return array{version: string, instructions: string, responses: array<string, string>, refusal_patterns: array<string, list<string>>}
      */
     public function get(string $version = self::CURRENT_VERSION): array
     {
-        if ($version !== self::CURRENT_VERSION) {
+        if (! in_array($version, [self::CURRENT_VERSION, 'patientai-v0.2'], true)) {
             throw new InvalidArgumentException('Unknown PatientAI prompt version.');
         }
 
-        return [
+        $definition = [
             'version' => $version,
             'instructions' => <<<'PROMPT'
 Tu es PatientAI, assistant numérique d'APP-007 destiné à accompagner le patient dans l'utilisation autorisée de la plateforme.
@@ -65,6 +65,22 @@ PROMPT,
                 ],
             ],
         ];
+        if ($version === self::CURRENT_VERSION) {
+            $definition['instructions'] = str_replace([
+                'Dans cette version, aucune donnée métier ou clinique, aucun résultat, score, rendez-vous, document ou historique professionnel ne t’est fourni.',
+                "Dans cette version, aucune donnée métier ou clinique, aucun résultat, score, rendez-vous, document ou historique professionnel ne t'est fourni.",
+                'aucun outil métier n’est disponible dans cette version.',
+                "aucun outil métier n'est disponible dans cette version.",
+            ], [
+                'Seuls UUID, titre de questionnaire, statut et lien patient autorisés par Laravel peuvent être fournis. Aucune donnée clinique, réponse, score ou résultat n’est fourni.',
+                'Seuls UUID, titre de questionnaire, statut et lien patient autorisés par Laravel peuvent être fournis. Aucune donnée clinique, réponse, score ou résultat n’est fourni.',
+                'Seuls les outils de liste et statut des évaluations sont disponibles en lecture seule.',
+                'Seuls les outils de liste et statut des évaluations sont disponibles en lecture seule.',
+            ], $definition['instructions']);
+            $definition['responses']['capabilities'] = 'Je peux lister vos évaluations accessibles et afficher leur statut fourni par Laravel. Je n’ai pas accès aux données cliniques, réponses, scores ou résultats. Je ne pose aucun diagnostic et ne réponds pas aux questionnaires à votre place.';
+        }
+
+        return $definition;
     }
 
     public function response(string $category, string $version = self::CURRENT_VERSION): string
