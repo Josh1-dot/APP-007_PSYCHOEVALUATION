@@ -7,6 +7,9 @@
 @foreach($links as [$url,$label,$icon])
 @if(!(auth()->user()->role === 'entreprise' && $url === '/calendrier'))<a href="{{ $url }}" class="nav-item {{ request()->is($url === '/' ? '/' : trim($url,'/').'*') ? 'active' : '' }}">@include('partials.icon',['name'=>$icon]) {{ $label }}</a>@endif
 @endforeach
+@if(config('patientai.enabled') && auth()->user()->role === 'patient' && auth()->user()->client)
+<a href="{{ route('patientai.index') }}" class="nav-item">PatientAI</a>
+@endif
 <div class="nav-label">COLLABORATION</div>
 @foreach([['/messagerie','Messagerie','message'],['/documents','Documents','folder']] as [$url,$label,$icon])<a href="{{ $url }}" class="nav-item {{ request()->is(trim($url,'/').'*') ? 'active' : '' }}">@include('partials.icon',['name'=>$icon]) {{ $label }}</a>@endforeach
 @if(auth()->user()->isProfessional())

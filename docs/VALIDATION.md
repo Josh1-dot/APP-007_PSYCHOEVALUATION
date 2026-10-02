@@ -172,3 +172,19 @@ Lors des vérifications locales des 25–28 septembre : connexion au serveur PHP
 - Envoi d’e-mails externes, reporté par l’utilisateur : aucun envoi réel validé. La boîte locale de test est indisponible en production ; aucun transport adapté aux restrictions SMTP de Render gratuit n’est configuré.
 - Synchronisations Google/Outlook et locale/distante non implémentées ; aucun calendrier de livraison défini.
 - Audit externe de sécurité/conformité et certification clinique non réalisés.
+
+
+## Feature 019 — P0 + PatientAI v0.1 — 2 octobre 2026
+
+- `php artisan test --compact tests/Feature/PatientAiTest.php` : **33 cas, 237 assertions réussies** (SQLite en mémoire).
+- `php artisan test --compact` : **76 tests, 620 assertions réussies** ; 43 cas préexistants conservés.
+- `vendor/bin/pint --dirty --format agent` : réussi.
+- `php artisan route:list --path=patient/assistant --no-interaction` : cinq routes PatientAI ; `php artisan view:cache --no-interaction` et `git diff --check` : réussis.
+
+Preuves : authentification, quatre rôles non-patient rejetés, compte inactif, dossier manquant/détaché, flag OFF, accord séparé et identifiants imposés serveur ; refus lecture/envoi/suppression entre tenants et entre patients du même tenant ; persistance et chiffrement inspecté en base ; affichage XSS échappé ; requêtes POST/DELETE sans CSRF refusées 419 avec bypass de test désactivé, jeton valide accepté ; limites de longueur/types et quota par utilisateur (429 puis reprise) ; panne et réponse vide/provider non autorisé sans persistance ni fuite ; absence de texte dans audit et logs observés ; absence de contenu flashé.
+
+21 variantes sociales testées avec routeur/provider déterministes, aucune requête SQL émise par ces composants et aucune requête HTTP. Le parcours d'envoi est aussi vérifié sans requête aux tables évaluations/interprétations/rendez-vous/notes/questionnaires/documents. Le provider reçoit uniquement une intention, vérifiée par mock pour une demande contenant du texte privé. `Http::preventStrayRequests`, fake et `Http::assertNothingSent` vérifient les sorties HTTP dans les scénarios pertinents. Revue statique du fake : aucun client réseau ni accès SQL/Eloquent. Aucun OpenAI, clé ou crédit utilisé ; aucune API externe appelée.
+
+PAI-031 : export JSON des messages vérifié même flag OFF ; suppression patient et cascade ; retrait sous suspension conservant les messages/export mais interdisant l'envoi ; anonymisation réelle du dossier via route existante effaçant conversations/messages même flag OFF ; expiration à la borne de 30 jours, refus 410 après borne ; purge explicite tenant laissant autre tenant et suspension intacts ; commande globale testée. La migration additive est exécutée par RefreshDatabase sur SQLite, pas sur la base applicative ni Aiven.
+
+Limites : aucune recette navigateur/mobile/E2E, aucune validation MySQL ou concurrence réelle, aucune activation/déploiement distant ni test scheduler en production. Les contrôles HTTP simulés et Blade compilé ne prouvent pas le rendu visuel. Aucun développement v0.2+. Le skill testing-best-practices demandé par AGENTS.md n'a pas été retrouvé dans les emplacements locaux disponibles ; les conventions PHPUnit du projet ont été suivies.

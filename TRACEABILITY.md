@@ -90,3 +90,18 @@ Aucune validation métier officielle de la matrice de permissions, du format Enn
 - [AssessmentController::ai](app/Http/Controllers/AssessmentController.php) : append atomique avec copie exacte des messages et contenu original intégral ; événement interpretation.generee conservé. Édition et publication inchangées.
 - [Historique professionnel](resources/views/evaluations/ai-history.blade.php), inclus par [show](resources/views/evaluations/show.blade.php) : texte échappé, admin/psychologue seulement.
 - [AiInterpretationHistoryTest](tests/Feature/AiInterpretationHistoryTest.php) : 12 cas / 143 assertions, requêtes IA simulées et réseau inattendu interdit ; aucune validation OpenAI réelle.
+
+
+## 019 — PatientAI P0 + v0.1
+
+| Tâches | Réalisation / preuve |
+|---|---|
+| PAI-001 à 008 | Décisions P0 : docs/ARCHITECTURE.md ; handoff corrigé vers PATIENTAI-CONSTITUTION.md |
+| PAI-010 à 018 | config/patientai.php ; app/Services/{LlmProvider,FakeLlmProvider,ConversationIntentRouter,PatientAiChat}.php ; modèles AiConversation/AiMessage ; migration 2026_10_02_073257_create_patientai_tables.php |
+| PAI-019 à 022 | PatientAiController, routes nommées, vue modules/patientai, layout et CSS ; audit sans texte |
+| PAI-023 à 030 | tests/Feature/PatientAiTest.php : auth/rôles/flag, propriété, chiffrement, CSRF/XSS, erreurs, intentions, limites, réseau HTTP absent |
+| PAI-031 | PatientAiLifecycle, PrivacyController::export, Retention::erase, commande/schedule patientai:purge ; tests export/effacement/cascade/suspension/expiration/isolation purge |
+| PAI-032 à 034 | docs/VALIDATION.md : suite dédiée 33/237, complète 76/620, Pint et contrôles ; commit de livraison contenant ce suivi |
+| v0.2 à v1.0 | Non implémentées. Aucun provider réel, contexte métier, outil, RAG ou mémoire résumée |
+
+Preuves locales SQLite uniquement ; migration applicative/Aiven, déploiement, scheduler distant, concurrence MySQL et recette navigateur non validés.

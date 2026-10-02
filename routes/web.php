@@ -7,6 +7,7 @@ use App\Http\Controllers\BrandingController;
 use App\Http\Controllers\CabinetController;
 use App\Http\Controllers\DefinitionController;
 use App\Http\Controllers\ModuleController;
+use App\Http\Controllers\PatientAiController;
 use App\Http\Controllers\PrivacyController;
 use Illuminate\Support\Facades\Route;
 
@@ -16,11 +17,18 @@ Route::middleware('guest')->group(function () {
     Route::get('/reinitialiser/{token}', [AccountController::class, 'resetForm'])->name('password.reset');
     Route::post('/reinitialiser', [AccountController::class, 'reset'])->middleware('throttle:5,1')->name('password.update');
     Route::get('/invitation/{token}', [AccountController::class, 'invitation'])->middleware('throttle:20,1');
-    Route::post('/invitation/{token}',[AccountController::class, 'accept'])->middleware('throttle:5,1');
+    Route::post('/invitation/{token}', [AccountController::class, 'accept'])->middleware('throttle:5,1');
     Route::view('/connexion', 'auth.login')->name('login');
     Route::post('/connexion', [AuthController::class, 'login'])->middleware('throttle:5,1');
 });
 Route::middleware('auth')->group(function () {
+    Route::prefix('patient/assistant')->name('patientai.')->group(function (): void {
+        Route::get('/', [PatientAiController::class, 'index'])->name('index');
+        Route::post('/', [PatientAiController::class, 'store'])->middleware('throttle:patientai')->name('store');
+        Route::get('/{conversation}', [PatientAiController::class, 'show'])->name('show');
+        Route::post('/{conversation}/messages', [PatientAiController::class, 'message'])->middleware('throttle:patientai')->name('message');
+        Route::delete('/{conversation}', [PatientAiController::class, 'destroy'])->name('destroy');
+    });
     Route::post('/administration/invitations', [AccountController::class, 'invite']);
     Route::post('/administration/invitations/{invitation}/renvoyer', [AccountController::class, 'resend']);
     Route::post('/administration/invitations/{invitation}/revoquer', [AccountController::class, 'revoke']);

@@ -5,6 +5,7 @@ use App\Models\LocalMail;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Backups;
+use App\Services\PatientAiLifecycle;
 use App\Services\Retention;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
@@ -88,3 +89,12 @@ Schedule::call(function () {
     LocalMail::withoutGlobalScopes()->where('expires_at', '<', now())->delete();
     DB::table('password_reset_tokens')->where('created_at', '<', now()->subHour())->delete();
 })->daily()->timezone(config('psycho.backup_timezone'))->name('expired-access-messages')->withoutOverlapping();
+
+Artisan::command('patientai:purge', function (): void {
+    $count = 0;
+    foreach (Tenant::all() as $tenant) {
+        $count += app(PatientAiLifecycle::class)->purgeTenant($tenant->id);
+    }
+    $this->info($count.' conversation(s) expirée(s) supprimée(s).');
+})->purpose('Supprimer les conversations PatientAI expirées hors suspension de conservation');
+Schedule::command('patientai:purge')->daily()->timezone(config('psycho.backup_timezone'))->withoutOverlapping();

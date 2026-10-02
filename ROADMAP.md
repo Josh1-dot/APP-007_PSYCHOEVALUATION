@@ -44,3 +44,8 @@ Statuts : `DONE`, `PARTIAL`, `MISSING`, `BLOCKED`, `CONTRADICTS`. Les statuts de
 ## Principes conservés
 
 Réponse, scoring, interprétation IA, validation humaine et publication distincts ; IA jamais auto-publiée ; Gordon déterministe ; Ennéagramme sans scoring clinique inventé ; versions et snapshots ; isolation, consentement et audit. Les écarts à ces principes sont consignés, pas masqués par un statut `DONE`.
+
+
+## 019 — PatientAI
+
+**P0 + v0.1 implémentés et testés localement** (2 octobre 2026). Chat patient déterministe sans réseau, accord distinct, isolation tenant/propriétaire, chiffrement, audit métadonnées et cycle de vie export/effacement/purge. 33 cas dédiés / 237 assertions ; suite 76 / 620. Flag OFF par défaut ; migration non appliquée en production, recette navigateur et scheduler distant non validés. Feature 019 globale reste **PARTIAL** : v0.2 à v1.0 non commencées.

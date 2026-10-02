@@ -11,6 +11,7 @@ use App\Models\Document;
 use App\Models\Message;
 use App\Models\PrivacyRequest;
 use App\Services\Access;
+use App\Services\PatientAiLifecycle;
 use App\Services\Retention;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -84,11 +85,12 @@ class PrivacyController extends Controller
         });
         $messages = $client->user_id ? Message::where(fn ($q) => $q->where('sender_id', $client->user_id)->orWhere('recipient_id', $client->user_id))->get(['sender_id', 'recipient_id', 'body', 'created_at']) : collect();
         $data = ['exported_at' => now()->toIso8601String(), 'client' => $client->only(['id', 'first_name', 'last_name', 'email', 'phone', 'birth_date', 'reason']), 'consents' => Consent::where('client_id', $id)->get(['version', 'text', 'accepted_at', 'revoked_at']), 'assessments' => $assessments, 'appointments' => Appointment::where('client_id', $id)->get(['title', 'starts_at', 'duration', 'location', 'status']), 'documents' => Document::where('client_id', $id)->when(! $professional, fn ($q) => $q->where('shared', true))->get(['id', 'name', 'mime', 'size']), 'messages' => $messages, 'privacy_requests' => PrivacyRequest::where('client_id', $id)->get(['kind', 'details', 'status', 'response', 'created_at', 'resolved_at'])];
+        $data['patientai_conversations'] = app(PatientAiLifecycle::class)->export($client);
         if ($professional) {
             $data['clinical_notes'] = ClinicalNote::where('client_id', $id)->get(['body', 'created_at']);
         }
         Access::audit('dossier.exporte', $client);
 
-        return response()->streamDownload(fn () => print (json_encode($data,JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)), 'dossier-'.$id.'.json', ['Content-Type' => 'application/json']);
+        return response()->streamDownload(fn () => print (json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)), 'dossier-'.$id.'.json', ['Content-Type' => 'application/json']);
     }
 }

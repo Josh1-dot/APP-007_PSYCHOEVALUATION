@@ -51,6 +51,7 @@ class Retention
         DB::transaction(function () use ($client, &$paths) {
             $client = Client::withTrashed()->whereKey($client->id)->lockForUpdate()->firstOrFail();
             abort_unless($this->eligible($client), 422);
+            app(PatientAiLifecycle::class)->erase($client);
             $ids = Assessment::where('client_id', $client->id)->pluck('id');
             Comparison::where(fn ($q) => $q->whereIn('first_assessment_id', $ids)->orWhereIn('second_assessment_id', $ids))->delete();
             Interpretation::whereIn('assessment_id', $ids)->delete();

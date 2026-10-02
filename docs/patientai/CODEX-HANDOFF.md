@@ -6,7 +6,7 @@ Lis d'abord :
 - `AGENTS.md`
 - `docs/ARCHITECTURE.md`
 - `docs/VALIDATION.md`
-- `.specify/memory/constitution.md`
+- `docs/patientai/PATIENTAI-CONSTITUTION.md`
 - `specs/019-patientai-assistant/spec.md`
 - `specs/019-patientai-assistant/plan.md`
 - `specs/019-patientai-assistant/tasks.md`
