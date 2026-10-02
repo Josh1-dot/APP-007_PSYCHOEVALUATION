@@ -86,3 +86,6 @@ RAG local déterministe livré/testé : documents/chunks chiffrés, classificati
 
 ### 019 — PatientAI v1.0 readiness (documenté)
 Le hardening v1.0 est **code-complete** dans le dépôt et couvert par la validation locale disponible : 284 tests PatientAI / 3 056 assertions, puis 327 tests complets / 3 437 assertions. Le statut documenté reste **PARTIAL** pour la validation locale globale et **NON** pour la production-ready, parce que MySQL réel, navigateur E2E, Aiven/Render, provider externe et scheduler de production n’ont pas été exécutés. Le feature flag demeure OFF et aucun déploiement / migration Aiven n’a été effectué.
+
+### 020 — PatientAI Conversation v1.1 (SPEC ONLY)
+Spec Kit créé dans `specs/020-patientai-conversation-v1-1/` : intents déterministes, résolution sans UUID, référent borné conversationnel, refus sémantiques et matrice de recette. **Spécifié, non implémenté, non testé** ; aucune migration, API externe, modification Aiven ou déploiement Render. Feature 019 et ses garanties v1.0 restent la baseline.

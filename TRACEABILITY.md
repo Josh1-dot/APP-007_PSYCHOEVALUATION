@@ -170,3 +170,8 @@ Preuves locales SQLite uniquement ; migration applicative/Aiven, déploiement, s
 - Production-ready : **NON**
 - Preuves : PatientAI 284/3056 ; suite complète 327/3437 ; feature flag OFF ; aucun OpenAI / API externe / déploiement Aiven / rendus navigateur E2E exécutés.
 - Blocages production documentés : MySQL réel, navigateur E2E, Aiven/Render, provider réel, scheduler de production.
+
+## 020 — PatientAI Conversation v1.1 (SPEC ONLY)
+- Sources versionnées : [spec](specs/020-patientai-conversation-v1-1/spec.md), [plan](specs/020-patientai-conversation-v1-1/plan.md), [tasks](specs/020-patientai-conversation-v1-1/tasks.md), [critères d’acceptation](specs/020-patientai-conversation-v1-1/acceptance.md), [matrice de recette](specs/020-patientai-conversation-v1-1/conversation-test-matrix.md).
+- Statut : spécification documentaire seulement ; aucune implémentation, migration ou exécution de la matrice revendiquée.
+- Correspondance code/tests : à renseigner uniquement après implémentation et vérification. Invariants de sécurité de 019/v1.0 restent applicables.
