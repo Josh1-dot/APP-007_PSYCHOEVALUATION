@@ -26,7 +26,21 @@ class PatientAiChat
             $refusal = $this->policy->refusal($message);
             $request = $refusal === null ? $this->router->assessmentRequest($message) : null;
             $helpRequest = $refusal === null ? $this->router->helpRequest($message) : null;
-            if ($helpRequest !== null) {
+            $appointmentRequest = $refusal === null ? $this->router->appointmentRequest($message) : null;
+            if ($appointmentRequest !== null && $appointmentRequest !== 'read_only') {
+                $tools = app(PatientAppointmentTools::class);
+                $result = $appointmentRequest === 'list' ? $tools->listMyUpcomingAppointments() : $tools->getMyNextAppointment();
+                $reply = $this->provider->reply('appointments', $result);
+                if ($reply !== (new PatientAppointmentFormatter)->format($result)) {
+                    throw new RuntimeException('Invalid appointment response.');
+                }
+            } elseif ($appointmentRequest === 'read_only') {
+                $data = app(PatientGuideRegistry::class)->guide('appointments');
+                $reply = $this->provider->reply('help', $data);
+                if ($reply !== (new PatientHelpFormatter)->format($data)) {
+                    throw new RuntimeException('Invalid help response.');
+                }
+            } elseif ($helpRequest !== null) {
                 $data = isset($helpRequest['topic']) ? app(PatientGuideRegistry::class)->guide($helpRequest['topic']) : app(QuestionnaireHelpTool::class)->getQuestionnaireHelp($helpRequest['uuid'], $helpRequest['question_id']);
                 $reply = $this->provider->reply('help', $data);
                 if ($reply !== (new PatientHelpFormatter)->format($data)) {

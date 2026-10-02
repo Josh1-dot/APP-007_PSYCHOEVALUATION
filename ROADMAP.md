@@ -67,3 +67,7 @@ Outils de liste/statut d’évaluations read-only implémentés et testés local
 
 ### 019 — livraison v0.5
 Guide patient local déterministe approuvé/versionné et aide questionnaire read-only depuis la passation/version autorisée implémentés/testés localement. Objectif clinique non documenté déclaré absent, aucun choix de réponse/profil. Feature globale PARTIAL ; v0.6 à v1.0 non commencées. Aucun RAG/provider distant/réseau ; flag OFF, aucun déploiement/migration applicative.
+
+
+### 019 — livraison v0.6
+Rendez-vous PatientAI read-only implémentés/testés : liste bornée/prochain via Appointment réel, filtrage commun tenant/propriétaire/planifie/temps, fuseau applicatif explicite et rendu contrôlé sans réseau. PatientAI 176/2111 ; suite 219/2494. Feature globale PARTIAL, v0.7 à v1.0 non commencées ; flag OFF, aucun déploiement ni migration temporelle. Limites du DATETIME local et de la validation SQLite décrites dans docs/VALIDATION.md.

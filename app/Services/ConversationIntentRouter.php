@@ -66,6 +66,16 @@ class ConversationIntentRouter
         return null;
     }
 
+    public function appointmentRequest(string $message): ?string
+    {
+        return match ($this->normalize($message)) {
+            'quels sont mes prochains rendez vous', 'montre moi mes prochains rendez vous', 'mes prochains rendez vous' => 'list',
+            'ai je un rendez vous prochainement', 'quand est mon prochain rendez vous', 'quel est mon prochain rendez vous', 'mon prochain rendez vous' => 'next',
+            'prends moi un rendez vous demain', 'prends moi un rendez vous', 'annule mon rendez vous', 'deplace mon rendez vous a vendredi', 'deplace mon rendez vous', 'modifie mon rendez vous' => 'read_only',
+            default => null,
+        };
+    }
+
     public function normalize(string $message): string
     {
         return trim(preg_replace('/[^a-z0-9]+/', ' ', Str::lower(Str::ascii($message))) ?? '');

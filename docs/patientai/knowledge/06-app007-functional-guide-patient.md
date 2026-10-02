@@ -2,9 +2,9 @@
 
 Audience : PATIENT_PUBLIC
 Statut : APPROVED
-Version : patient-guide-v0.5.1
+Version : patient-guide-v0.6.1
 Source exécutée : docs/patientai/knowledge/06-app007-functional-guide-patient.json
-Approbation technique : audit code/vues du 2 octobre 2026 pour la mission v0.5. Aucun contenu clinique validé ou généré.
+Approbation technique : audit code/vues du 2 octobre 2026 pour la mission v0.5, avec correction factuelle de la capacité rendez-vous désormais livrée en v0.6. Aucun contenu clinique validé ou généré.
 
 Le JSON adjacent est la source unique utilisée par PatientAI, sélectionnée explicitement sans indexation ni RAG. Chaque rubrique porte les chemins de code qui établissent sa provenance. Les URLs sont ajoutées par une liste contrôlée Laravel, jamais par le texte documentaire. Ce Markdown est son résumé lisible.
 
@@ -52,7 +52,7 @@ Provenance : resources/views/evaluations/show.blade.php, app/Http/Controllers/As
 
 ## appointments
 
-Mes rendez-vous affiche les rendez-vous rattachés à votre dossier, leur date, durée, lieu et statut. Le calendrier peut inclure des rendez-vous passés ou annulés. Le patient ne peut pas créer ni annuler un rendez-vous dans ce portail : contactez le cabinet via la messagerie. PatientAI explique cette page sans consulter votre agenda.
+Mes rendez-vous affiche les rendez-vous rattachés à votre dossier, leur date, durée, lieu et statut. Le calendrier peut inclure des rendez-vous passés ou annulés. Le patient ne peut pas créer ni annuler un rendez-vous dans ce portail : contactez le cabinet via la messagerie. PatientAI peut consulter vos rendez-vous planifiés à venir ou le prochain, en lecture seule ; il ne crée, annule ni déplace aucun rendez-vous.
 
 Provenance : app/Http/Controllers/ModuleController.php, resources/views/modules/calendar.blade.php
 

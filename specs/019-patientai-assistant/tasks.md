@@ -59,8 +59,8 @@
 - [x] PAI-073 Tests fonctions patient réellement disponibles.
 
 ## v0.6 — rendez-vous
-- [ ] PAI-080 Outils rendez-vous read-only.
-- [ ] PAI-081 Tests propriété/fuseau horaire.
+- [x] PAI-080 Outils rendez-vous read-only.
+- [x] PAI-081 Tests propriété/fuseau horaire.
 
 ## v0.7 — résultats
 - [ ] PAI-090 Outil résultat publié.
@@ -108,3 +108,7 @@ PAI-060 à 062 implémentées/testées : PatientAssessmentTools, DTO minimaux re
 
 ## Livraison v0.5 — 2 octobre 2026
 PAI-070 à 073 : guide local approuvé patient-guide-v0.5.1 audité contre routes/controllers/Blade, PatientGuideRegistry/DTO et liens allowlist ; QuestionnaireHelpTool/DTO depuis PatientContext, passation en cours/consentement/version liée et question validée ; SafetyPolicy prioritaire, formatter déterministe et tests fonctions réellement accessibles/IDOR/données inertes. Version active prompt patientai-v0.5, versions antérieures conservées. 40 cas / 346 assertions nouveaux ; PatientAI 154/1936 ; suite 197/2319. Résultats et limites dans docs/VALIDATION.md ; aucune tâche v0.6+ commencée.
+
+
+## Livraison v0.6 — 2 octobre 2026
+PAI-080/081 : PatientAppointmentTools listMyUpcomingAppointments/getMyNextAppointment depuis PatientContext, filtre commun tenant/propriétaire/planifie/début >= maintenant à la seconde, fuseau app.timezone et DTO readonly minimal ; formatter/provider contrôlé et guide sans action. 22 nouveaux cas / 178 assertions ; PatientAI 176/2111 ; suite complète 219/2494. Décisions temporelles/visibilité/limites : docs/ARCHITECTURE.md ; preuves : docs/VALIDATION.md. Aucun v0.7+ commencé.

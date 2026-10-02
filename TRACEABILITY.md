@@ -134,3 +134,9 @@ Preuves locales SQLite uniquement ; migration applicative/Aiven, déploiement, s
 - PAI-071 : QuestionnaireHelpTool, QuestionnaireHelpData/QuestionHelpData, définition/version réelle et isolation PatientContext ; requête autorisée v0.4 partagée.
 - PAI-072 : PromptRegistry patientai-v0.5/SafetyPolicy prioritaire, tests anti-réponse/anti-profil et contenu documentaire inerte ; PatientHelpFormatter rend seulement les DTO autorisés.
 - PAI-073 : PatientAiHelpTest, tests liens patient réels et exclusions professionnelles/futures, sans réseau. Résultats et limites dans docs/VALIDATION.md. Aucune v0.6+.
+
+
+## 019 — PatientAI v0.6
+- PAI-080 : PatientAppointmentTools, PatientAppointmentData/Result, PatientAppointmentFormatter ; Appointment existant, source commune liste/prochain, projection minimale, calendrier Laravel et contrôle de rendu PatientAiChat/FakeLlmProvider. Prompt actif patientai-v0.6 et correction factuelle guide patient-guide-v0.6.1.
+- PAI-081 : PatientAiAppointmentTest, 22 cas / 178 assertions ; bornes temporelles/offsets/jour, isolation, paramètres falsifiés, provider minimal, absence HTTP et mutations refusées. PatientAI 176/2111 ; suite complète 219/2494.
+- Aucune route/Blade/migration nouvelle, aucun v0.7+. Règles exactes et limites dans docs/ARCHITECTURE.md et docs/VALIDATION.md.

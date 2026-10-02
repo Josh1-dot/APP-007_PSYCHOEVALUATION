@@ -1,9 +1,9 @@
 {
   "audience": "PATIENT_PUBLIC",
   "status": "APPROVED",
-  "version": "patient-guide-v0.5.1",
+  "version": "patient-guide-v0.6.1",
   "approval": {
-    "basis": "Audit du code Laravel et des vues patient pour la livraison v0.5",
+    "basis": "Audit code/vues v0.5 et correction factuelle de la capacité PatientAI rendez-vous livrée en v0.6",
     "date": "2026-10-02"
   },
   "source": "docs/patientai/knowledge/06-app007-functional-guide-patient.json",
@@ -62,10 +62,11 @@
       ]
     },
     "appointments": {
-      "text": "Mes rendez-vous affiche les rendez-vous rattachés à votre dossier, leur date, durée, lieu et statut. Le calendrier peut inclure des rendez-vous passés ou annulés. Le patient ne peut pas créer ni annuler un rendez-vous dans ce portail : contactez le cabinet via la messagerie. PatientAI explique cette page sans consulter votre agenda.",
+      "text": "Mes rendez-vous affiche les rendez-vous rattachés à votre dossier, leur date, durée, lieu et statut. Le calendrier peut inclure des rendez-vous passés ou annulés. Le patient ne peut pas créer ni annuler un rendez-vous dans ce portail : contactez le cabinet via la messagerie. PatientAI peut consulter vos rendez-vous planifiés à venir ou le prochain, en lecture seule ; il ne crée, annule ni déplace aucun rendez-vous.",
       "provenance": [
         "app/Http/Controllers/ModuleController.php",
-        "resources/views/modules/calendar.blade.php"
+        "resources/views/modules/calendar.blade.php",
+        "app/Services/PatientAppointmentTools.php"
       ]
     },
     "messages": {
