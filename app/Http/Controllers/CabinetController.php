@@ -15,6 +15,7 @@ use App\Services\Access;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class CabinetController extends Controller
 {
@@ -168,27 +169,44 @@ class CabinetController extends Controller
     {
         abort_unless(auth()->user()->role === 'admin', 403);
 
-        return view('modules.admin', ['users' => User::where('tenant_id', auth()->user()->tenant_id)->get(), 'clients' => Client::all(), 'invitations' => UserInvitation::with('user')->whereNull('accepted_at')->latest()->get(), 'organizations' => Organization::all(), 'logs' => AuditLog::with('user')->latest()->paginate(25)]);
+        return view('modules.admin', ['users' => User::where('tenant_id', auth()->user()->tenant_id)->get(), 'clients' => Client::whereNull('user_id')->whereNull('anonymized_at')->get(), 'invitations' => UserInvitation::with('user')->whereNull('accepted_at')->latest()->get(), 'organizations' => Organization::all(), 'logs' => AuditLog::with('user')->latest()->paginate(25)]);
     }
 
     public function user(Request $r)
     {
         abort_unless(auth()->user()->role === 'admin', 403);
-        $d = $r->validate(['name' => 'required|string|max:100', 'email' => 'required|email|max:255|unique:users', 'password' => 'required|string|min:12|max:128', 'role' => 'required|in:admin,psychologue,conseiller,patient,entreprise', 'client_id' => 'nullable|integer', 'organization_id' => 'nullable|integer']);
-        DB::transaction(function () use ($d) {
+        $tenantId = auth()->user()->tenant_id;
+        $r->merge(['email' => mb_strtolower(trim((string) $r->input('email')))]);
+        $d = $r->validate([
+            'name' => 'required|string|max:100',
+            'email' => 'required|email|max:255|unique:users',
+            'password' => 'required|string|min:12|max:128',
+            'role' => 'required|in:admin,psychologue,conseiller,patient,entreprise',
+            'client_id' => ['exclude_unless:role,patient', 'required', 'integer', Rule::exists('clients', 'id')->where('tenant_id', $tenantId)->whereNull('anonymized_at')->whereNull('deleted_at')->whereNull('user_id')],
+            'organization_id' => ['exclude_unless:role,entreprise', 'required', 'integer', Rule::exists('organizations', 'id')->where('tenant_id', $tenantId)->whereNull('deleted_at')],
+        ]);
+        DB::transaction(function () use ($d, $tenantId) {
             $client = null;
             if ($d['role'] === 'patient') {
-                $client = Client::whereNull('user_id')->lockForUpdate()->findOrFail($d['client_id'] ?? 0);
-            } if ($d['role'] === 'entreprise') {
-                Organization::findOrFail($d['organization_id'] ?? 0);
+                $client = Client::where('tenant_id', $tenantId)->whereNull('anonymized_at')->whereNull('deleted_at')->whereNull('user_id')->lockForUpdate()->find($d['client_id']);
+                if (! $client) {
+                    throw ValidationException::withMessages(['client_id' => 'Ce dossier n’est plus disponible pour la création d’un compte patient.']);
+                }
             }
-            $u = User::create(['name' => $d['name'], 'email' => $d['email'], 'password' => $d['password'], 'role' => $d['role'], 'tenant_id' => auth()->user()->tenant_id, 'organization_id' => $d['role'] === 'entreprise' ? $d['organization_id'] : null]);
+            if ($d['role'] === 'entreprise') {
+                $organization = Organization::where('tenant_id', $tenantId)->whereNull('deleted_at')->find($d['organization_id']);
+                if (! $organization) {
+                    throw ValidationException::withMessages(['organization_id' => 'Cette organisation n’est pas disponible dans votre cabinet.']);
+                }
+            }
+            $u = User::create(['name' => $d['name'], 'email' => $d['email'], 'password' => $d['password'], 'role' => $d['role'], 'active' => true, 'tenant_id' => $tenantId, 'organization_id' => $d['role'] === 'entreprise' ? $d['organization_id'] : null]);
             if ($client) {
                 $client->update(['user_id' => $u->id]);
-            } Access::audit('utilisateur.cree', $u);
+            }
+            Access::audit('utilisateur.cree', $u);
         });
 
-        return back()->with('success', 'Compte créé. Transmettez ses accès par un canal sûr.');
+        return redirect()->route('administration')->with('success', 'Compte créé. Transmettez ses accès par un canal sûr.');
     }
 
     public function toggleUser(User $user)

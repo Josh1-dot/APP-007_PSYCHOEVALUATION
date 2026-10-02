@@ -90,8 +90,8 @@ Route::middleware('auth')->group(function () {
     Route::view('/guide', 'modules.guide');
     Route::get('/corbeille', [CabinetController::class, 'trash']);
     Route::post('/corbeille/{id}/restaurer', [CabinetController::class, 'restore']);
-    Route::get('/administration', [CabinetController::class, 'admin']);
-    Route::post('/administration/utilisateurs', [CabinetController::class, 'user']);
+    Route::get('/administration', [CabinetController::class, 'admin'])->name('administration');
+    Route::post('/administration/utilisateurs', [CabinetController::class, 'user'])->name('administration.users.store');
     Route::post('/administration/utilisateurs/{user}/acces', [CabinetController::class, 'toggleUser']);
     Route::post('/administration/cabinet', [CabinetController::class, 'settings']);
 });
