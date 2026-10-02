@@ -1,9 +1,9 @@
 {
   "audience": "PATIENT_PUBLIC",
   "status": "APPROVED",
-  "version": "patient-guide-v0.6.1",
+  "version": "patient-guide-v0.7.1",
   "approval": {
-    "basis": "Audit code/vues v0.5 et correction factuelle de la capacité PatientAI rendez-vous livrée en v0.6",
+    "basis": "Audit code/vues v0.5–v0.6 et correction factuelle des capacités de résultat publié livrées en v0.7",
     "date": "2026-10-02"
   },
   "source": "docs/patientai/knowledge/06-app007-functional-guide-patient.json",
@@ -55,10 +55,11 @@
       ]
     },
     "results": {
-      "text": "Ouvrez le lien individuel de votre évaluation depuis Mon espace. Les résultats et la restitution deviennent consultables après publication par le professionnel ; avant cela, un message indique que la restitution est en préparation. Le PDF patient exige un statut publié et une publication effective. PatientAI décrit ce parcours mais ne lit pas vos résultats détaillés dans cette version.",
+      "text": "Ouvrez le lien individuel de votre évaluation depuis Mon espace. Les résultats et la restitution deviennent consultables après publication par le professionnel ; avant cela, un message indique que la restitution est en préparation. Le PDF patient exige un statut publié et une publication effective. PatientAI peut reprendre les scores et un extrait de restitution déjà publiés pour une évaluation désignée par UUID ; les faits publiés sont séparés de son explication descriptive, sans recalcul ni nouvelle interprétation clinique.",
       "provenance": [
         "resources/views/evaluations/show.blade.php",
-        "app/Http/Controllers/AssessmentController.php"
+        "app/Http/Controllers/AssessmentController.php",
+        "app/Services/PatientPublishedResultTool.php"
       ]
     },
     "appointments": {
@@ -100,7 +101,7 @@
       ]
     },
     "patientai": {
-      "text": "PatientAI est un assistant numérique, ni psychologue ni médecin. Son accès dépend de l’activation par la plateforme et d’un accord distinct pour chaque conversation. Vous pouvez consulter l’historique, envoyer un message et supprimer une conversation ; sous suspension de conservation, le retrait bloque les nouveaux messages sans effacement immédiat. PatientAI répond aux salutations, présente le guide et aide descriptivement les questionnaires autorisés ; il peut lister vos évaluations et leur statut, sans diagnostic, réponse à votre place, score ni résultat détaillé.",
+      "text": "PatientAI est un assistant numérique, ni psychologue ni médecin. Son accès dépend de l’activation par la plateforme et d’un accord distinct pour chaque conversation. Vous pouvez consulter l’historique, envoyer un message et supprimer une conversation ; sous suspension de conservation, le retrait bloque les nouveaux messages sans effacement immédiat. PatientAI répond aux salutations, présente le guide et aide descriptivement les questionnaires autorisés ; il peut lister vos évaluations et leur statut, sans diagnostic, réponse à votre place ou recalcul de score. Il peut reprendre un résultat déjà publié désigné par UUID, sans accès aux brouillons ni aux générations privées.",
       "provenance": [
         "app/Http/Controllers/PatientAiController.php",
         "app/Services/PatientAiLifecycle.php",

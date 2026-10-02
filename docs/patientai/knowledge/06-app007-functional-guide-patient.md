@@ -2,9 +2,9 @@
 
 Audience : PATIENT_PUBLIC
 Statut : APPROVED
-Version : patient-guide-v0.6.1
+Version : patient-guide-v0.7.1
 Source exécutée : docs/patientai/knowledge/06-app007-functional-guide-patient.json
-Approbation technique : audit code/vues du 2 octobre 2026 pour la mission v0.5, avec correction factuelle de la capacité rendez-vous désormais livrée en v0.6. Aucun contenu clinique validé ou généré.
+Approbation technique : audit code/vues du 2 octobre 2026 pour la mission v0.5, avec corrections factuelles des capacités rendez-vous v0.6 et résultat publié v0.7. Aucun contenu clinique validé ou généré.
 
 Le JSON adjacent est la source unique utilisée par PatientAI, sélectionnée explicitement sans indexation ni RAG. Chaque rubrique porte les chemins de code qui établissent sa provenance. Les URLs sont ajoutées par une liste contrôlée Laravel, jamais par le texte documentaire. Ce Markdown est son résumé lisible.
 
@@ -46,7 +46,7 @@ Provenance : resources/views/evaluations/show.blade.php, public/assets/app.js, a
 
 ## results
 
-Ouvrez le lien individuel de votre évaluation depuis Mon espace. Les résultats et la restitution deviennent consultables après publication par le professionnel ; avant cela, un message indique que la restitution est en préparation. Le PDF patient exige un statut publié et une publication effective. PatientAI décrit ce parcours mais ne lit pas vos résultats détaillés dans cette version.
+Ouvrez le lien individuel de votre évaluation depuis Mon espace. Les résultats et la restitution deviennent consultables après publication par le professionnel ; avant cela, un message indique que la restitution est en préparation. Le PDF patient exige un statut publié et une publication effective. PatientAI peut reprendre les scores et un extrait de restitution déjà publiés pour une évaluation désignée par UUID ; les faits publiés sont séparés de son explication descriptive, sans recalcul ni nouvelle interprétation clinique.
 
 Provenance : resources/views/evaluations/show.blade.php, app/Http/Controllers/AssessmentController.php
 
@@ -82,7 +82,7 @@ Provenance : app/Http/Controllers/PrivacyController.php, resources/views/modules
 
 ## patientai
 
-PatientAI est un assistant numérique, ni psychologue ni médecin. Son accès dépend de l’activation par la plateforme et d’un accord distinct pour chaque conversation. Vous pouvez consulter l’historique, envoyer un message et supprimer une conversation ; sous suspension de conservation, le retrait bloque les nouveaux messages sans effacement immédiat. PatientAI répond aux salutations, présente le guide et aide descriptivement les questionnaires autorisés ; il peut lister vos évaluations et leur statut, sans diagnostic, réponse à votre place, score ni résultat détaillé.
+PatientAI est un assistant numérique, ni psychologue ni médecin. Son accès dépend de l’activation par la plateforme et d’un accord distinct pour chaque conversation. Vous pouvez consulter l’historique, envoyer un message et supprimer une conversation ; sous suspension de conservation, le retrait bloque les nouveaux messages sans effacement immédiat. PatientAI répond aux salutations, présente le guide et aide descriptivement les questionnaires autorisés ; il peut lister vos évaluations et leur statut, sans diagnostic, réponse à votre place ou recalcul de score. Il peut reprendre un résultat déjà publié désigné par UUID, sans accès aux brouillons ni aux générations privées.
 
 Provenance : app/Http/Controllers/PatientAiController.php, app/Services/PatientAiLifecycle.php, resources/views/modules/patientai.blade.php
 

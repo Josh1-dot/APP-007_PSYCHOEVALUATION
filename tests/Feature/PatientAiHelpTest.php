@@ -123,7 +123,7 @@ class PatientAiHelpTest extends TestCase
         $this->assertStringContainsString('dépôt de fichiers est réservé', $registry->guide('documents')->text);
         $this->assertStringContainsString('réservées aux professionnels', $registry->guide('assessments')->text);
         $this->assertStringContainsString('une seule page', $registry->guide('passations')->text);
-        $this->assertStringContainsString('ne lit pas vos résultats détaillés', $registry->guide('results')->text);
+        $this->assertStringContainsString('déjà publiés', $registry->guide('results')->text);
         $this->assertStringContainsString('pas automatiquement', $registry->guide('rights')->text);
         foreach (['patientai-v0.2', 'patientai-v0.4', 'patientai-v0.5'] as $version) {
             $this->assertSame($version, (new PromptRegistry)->get($version)['version']);

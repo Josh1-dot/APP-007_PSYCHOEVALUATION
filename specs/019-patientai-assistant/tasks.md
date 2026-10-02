@@ -63,9 +63,9 @@
 - [x] PAI-081 Tests propriété/fuseau horaire.
 
 ## v0.7 — résultats
-- [ ] PAI-090 Outil résultat publié.
-- [ ] PAI-091 Bloquer draft/ai_generations/notes.
-- [ ] PAI-092 Tests publication et propriété.
+- [x] PAI-090 Outil résultat publié.
+- [x] PAI-091 Bloquer draft/ai_generations/notes.
+- [x] PAI-092 Tests publication et propriété.
 
 ## v0.8 — mémoire
 - [ ] PAI-100 Mémoire bornée/chiffrée.
@@ -112,3 +112,7 @@ PAI-070 à 073 : guide local approuvé patient-guide-v0.5.1 audité contre route
 
 ## Livraison v0.6 — 2 octobre 2026
 PAI-080/081 : PatientAppointmentTools listMyUpcomingAppointments/getMyNextAppointment depuis PatientContext, filtre commun tenant/propriétaire/planifie/début >= maintenant à la seconde, fuseau app.timezone et DTO readonly minimal ; formatter/provider contrôlé et guide sans action. 22 nouveaux cas / 178 assertions ; PatientAI 176/2111 ; suite complète 219/2494. Décisions temporelles/visibilité/limites : docs/ARCHITECTURE.md ; preuves : docs/VALIDATION.md. Aucun v0.7+ commencé.
+
+
+## Livraison v0.7 — 2 octobre 2026
+PAI-090 à 092 : PatientPublishedResultTool depuis PatientContext, publication réelle/tenant/propriétaire/version contrôlés, DTO readonly minimal, faits publiés distincts de l’explication déterministe ; exclusion draft/ai_generations/notes/réponses et contrôle strict du rendu provider. 26 cas / 157 assertions nouveaux ; PatientAI 202/2245 ; suite 245/2628. Preuves/limites dans docs/VALIDATION.md, critères exacts et cycle des anciennes réponses dans docs/ARCHITECTURE.md. Aucun v0.8+ commencé.

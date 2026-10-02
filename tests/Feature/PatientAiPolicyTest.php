@@ -35,8 +35,8 @@ class PatientAiPolicyTest extends TestCase
         $registry = new PromptRegistry;
         $this->assertSame('patientai-v0.2', $registry->get('patientai-v0.2')['version']);
         $definition = $registry->get();
-        $this->assertSame('patientai-v0.6', PromptRegistry::CURRENT_VERSION);
-        $this->assertSame('patientai-v0.6', $definition['version']);
+        $this->assertSame('patientai-v0.7', PromptRegistry::CURRENT_VERSION);
+        $this->assertSame('patientai-v0.7', $definition['version']);
         $this->assertSame($definition, $registry->get());
         foreach (['assistant numérique', 'psychologue', 'médecin', 'diagnostic', 'N’invente', 'Ne réponds jamais', 'score', 'secret', 'Laravel', 'réseau'] as $rule) {
             $this->assertStringContainsString(str_replace('’', "'", $rule), $definition['instructions']);
@@ -164,7 +164,7 @@ class PatientAiPolicyTest extends TestCase
     {
         $conversation = AiConversation::factory()->create();
         $this->actingAs(User::findOrFail($conversation->user_id));
-        foreach (['Quel est mon résultat ?', 'Quel est mon score ?'] as $message) {
+        foreach (['Quel est mon score ?'] as $message) {
             $this->post('/patient/assistant/'.$conversation->uuid.'/messages', ['content' => $message])->assertRedirect()->assertSessionHasNoErrors();
             $response = AiMessage::where('role', 'assistant')->latest('id')->firstOrFail()->content;
             $this->assertStringContainsString('Je n’ai pas accès à cette information dans cette version.', $response);

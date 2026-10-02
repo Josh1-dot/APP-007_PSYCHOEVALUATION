@@ -71,3 +71,7 @@ Guide patient local déterministe approuvé/versionné et aide questionnaire rea
 
 ### 019 — livraison v0.6
 Rendez-vous PatientAI read-only implémentés/testés : liste bornée/prochain via Appointment réel, filtrage commun tenant/propriétaire/planifie/temps, fuseau applicatif explicite et rendu contrôlé sans réseau. PatientAI 176/2111 ; suite 219/2494. Feature globale PARTIAL, v0.7 à v1.0 non commencées ; flag OFF, aucun déploiement ni migration temporelle. Limites du DATETIME local et de la validation SQLite décrites dans docs/VALIDATION.md.
+
+
+### 019 — livraison v0.7
+Outil résultat déjà publié read-only livré/testé : source Assessment/Interpretation, publication effective et propriété, DTO sans données privées, scores source exacts et texte publié avec explication descriptive distincte. PatientAI 202/2245 ; suite 245/2628. Feature globale PARTIAL, v0.8 à v1.0 non commencées. Flag OFF, aucun provider distant/réseau/déploiement ; limites SQLite, texte/extrait et historique décrites dans docs/VALIDATION.md.

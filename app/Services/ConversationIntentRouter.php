@@ -76,6 +76,15 @@ class ConversationIntentRouter
         };
     }
 
+    public function publishedResultRequest(string $message): ?string
+    {
+        if (preg_match('/^(?:quel est mon resultat|montre[ -]moi mon resultat publie|explique mon resultat|quel est le resultat de cette evaluation)(?:\s+([^\s]+))?\s*[?.!]*$/iD', Str::ascii(trim($message)), $matches)) {
+            return trim($matches[1] ?? '', '?.!');
+        }
+
+        return null;
+    }
+
     public function normalize(string $message): string
     {
         return trim(preg_replace('/[^a-z0-9]+/', ' ', Str::lower(Str::ascii($message))) ?? '');

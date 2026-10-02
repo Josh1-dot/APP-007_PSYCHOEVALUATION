@@ -6,8 +6,11 @@ class FakeLlmProvider implements LlmProvider
 {
     public function __construct(public PromptRegistry $prompts = new PromptRegistry) {}
 
-    public function reply(string $intent, PatientAssessmentResult|PatientGuideData|QuestionnaireHelpData|PatientAppointmentResult|null $assessments = null): string
+    public function reply(string $intent, PatientAssessmentResult|PatientGuideData|QuestionnaireHelpData|PatientAppointmentResult|PatientPublishedResultData|null $assessments = null): string
     {
+        if ($assessments instanceof PatientPublishedResultData) {
+            return (new PatientPublishedResultFormatter)->format($assessments);
+        }
         if ($assessments instanceof PatientAppointmentResult) {
             return (new PatientAppointmentFormatter)->format($assessments);
         }

@@ -27,7 +27,14 @@ class PatientAiChat
             $request = $refusal === null ? $this->router->assessmentRequest($message) : null;
             $helpRequest = $refusal === null ? $this->router->helpRequest($message) : null;
             $appointmentRequest = $refusal === null ? $this->router->appointmentRequest($message) : null;
-            if ($appointmentRequest !== null && $appointmentRequest !== 'read_only') {
+            $resultRequest = $refusal === null ? $this->router->publishedResultRequest($message) : null;
+            if ($resultRequest !== null) {
+                $data = app(PatientPublishedResultTool::class)->getMyPublishedResult($resultRequest);
+                $reply = $this->provider->reply('published_result', $data);
+                if ($reply !== (new PatientPublishedResultFormatter)->format($data)) {
+                    throw new RuntimeException('Invalid published result response.');
+                }
+            } elseif ($appointmentRequest !== null && $appointmentRequest !== 'read_only') {
                 $tools = app(PatientAppointmentTools::class);
                 $result = $appointmentRequest === 'list' ? $tools->listMyUpcomingAppointments() : $tools->getMyNextAppointment();
                 $reply = $this->provider->reply('appointments', $result);

@@ -140,3 +140,10 @@ Preuves locales SQLite uniquement ; migration applicative/Aiven, déploiement, s
 - PAI-080 : PatientAppointmentTools, PatientAppointmentData/Result, PatientAppointmentFormatter ; Appointment existant, source commune liste/prochain, projection minimale, calendrier Laravel et contrôle de rendu PatientAiChat/FakeLlmProvider. Prompt actif patientai-v0.6 et correction factuelle guide patient-guide-v0.6.1.
 - PAI-081 : PatientAiAppointmentTest, 22 cas / 178 assertions ; bornes temporelles/offsets/jour, isolation, paramètres falsifiés, provider minimal, absence HTTP et mutations refusées. PatientAI 176/2111 ; suite complète 219/2494.
 - Aucune route/Blade/migration nouvelle, aucun v0.7+. Règles exactes et limites dans docs/ARCHITECTURE.md et docs/VALIDATION.md.
+
+
+## 019 — PatientAI v0.7
+- PAI-090 : PatientPublishedResultTool/Data/Formatter, Assessment/AssessmentDefinition/Interpretation et autorisation v0.4 réutilisées ; publication réelle verrouillée et projection fidèle des scores/texte publics.
+- PAI-091 : sélection explicite publiée sans draft/ai_generations/input_snapshot/notes/answers ; conteneur results filtré côté serveur. FakeLlmProvider/PatientAiChat rendent et vérifient un DTO sans Eloquent ni permissions provider.
+- PAI-092 : PatientAiPublishedResultTest, 26 cas / 157 assertions ; workflow publier/dépublier, isolation, incohérences, DTO, fidélité/absence d’invention, distinction faits/explication et absence HTTP. PatientAI 202/2245 ; suite 245/2628.
+- Prompt actif patientai-v0.7, guide corrigé patient-guide-v0.7.1. Aucune v0.8+, route/Blade/migration nouvelle ; décisions/limites dans docs/ARCHITECTURE.md et docs/VALIDATION.md.
