@@ -15,6 +15,9 @@ class Scoring
         $ids = [];
         foreach ($definition->questions as $q) {
             $id = (string) $q['id'];
+            if ($definition->engine_version === EnneagramScoring::ENGINE_VERSION && $q['type'] === 'scale' && isset($answers[$id]) && (is_bool($answers[$id]) || ! (is_int($answers[$id]) || is_string($answers[$id])))) {
+                throw ValidationException::withMessages(['answers' => 'Une échelle nécessite une réponse entière.']);
+            }
             $ids[] = $id;
             $base = ($complete && (in_array($definition->kind, ['gordon', 'enneagramme']) || ($q['required'] ?? true))) ? 'required' : 'nullable';
             $rules[$id] = match ($q['type']) {
@@ -66,7 +69,14 @@ class Scoring
             return ['kind' => 'gordon', 'scores' => $scores, 'maximum' => 15, 'engine' => $d->engine_version, 'definition_version' => $d->version];
         }
         if ($d->kind === 'enneagramme') {
-            return ['kind' => 'enneagramme', 'scores' => $answers, 'maximum' => 100, 'method' => 'Pourcentages auto-déclarés, sans score clinique', 'engine' => 'self-report-v1', 'definition_version' => $d->version];
+            if ($d->engine_version === 'self-report-v1') {
+                return ['kind' => 'enneagramme', 'scores' => $answers, 'maximum' => 100, 'method' => 'Pourcentages auto-déclarés, sans score clinique', 'engine' => 'self-report-v1', 'definition_version' => $d->version];
+            }
+            if ($d->engine_version !== EnneagramScoring::ENGINE_VERSION) {
+                throw ValidationException::withMessages(['definition' => 'Version de moteur Ennéagramme non prise en charge.']);
+            }
+
+            return app(EnneagramScoring::class)->calculate($d, $answers);
         }
 
         return ['kind' => $d->kind, 'answers' => $answers, 'engine' => 'raw-v1', 'definition_version' => $d->version];

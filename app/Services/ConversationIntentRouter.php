@@ -78,6 +78,7 @@ class ConversationIntentRouter
     {
         return in_array($normalized, [
             'quelles sont mes evaluations', 'quels sont mes evaluations', 'montre moi mes evaluations', 'liste mes evaluations',
+            'j ai un test a faire', 'ai je un test a faire', 'quel questionnaire dois je faire',
             'mes evaluations', 'ai je des evaluations', 'ai je des evaluations en cours', 'what assessments do i have',
             'list my assessments', 'what are my assessments', 'show my assessments', 'list my tests',
         ], true);
@@ -159,7 +160,7 @@ class ConversationIntentRouter
     {
         $normalized = $this->normalize($this->withoutUuid($message));
         if ($this->isAssessmentsList($normalized)) {
-            return ['tool' => 'list', 'filters' => $normalized === 'ai je des evaluations en cours' ? ['status' => 'en_cours'] : [], 'uuid' => ''];
+            return ['tool' => 'list', 'filters' => in_array($normalized, ['ai je des evaluations en cours', 'j ai un test a faire', 'ai je un test a faire', 'quel questionnaire dois je faire'], true) ? ['status' => 'en_cours'] : [], 'uuid' => ''];
         }
         if ($this->isAssessmentStatus($normalized)) {
             preg_match('/\b[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/i', $message, $matches);
@@ -181,6 +182,7 @@ class ConversationIntentRouter
             'ou sont mes evaluations', 'comment acceder a mes evaluations' => 'assessments',
             'comment fonctionne une passation', 'comment sauvegarder mes reponses', 'est ce que je peux revenir a la question precedente', 'comment dois je utiliser cette page', 'comment soumettre mon questionnaire' => 'passations',
             'comment fonctionnent les questionnaires' => 'questionnaires',
+            'qu est ce qu une forme', 'qu est ce qu une forme de questionnaire', 'pourquoi les questions sont differentes cette fois', 'je veux refaire mon test', 'je veux refaire mon questionnaire', 'comment refaire mon test' => 'questionnaires',
             'comment voir mes resultats', 'ou voir mes resultats publies' => 'results',
             'comment voir mes rendez vous', 'comment fonctionne le calendrier' => 'appointments',
             'comment fonctionne la messagerie', 'comment envoyer un message' => 'messages',

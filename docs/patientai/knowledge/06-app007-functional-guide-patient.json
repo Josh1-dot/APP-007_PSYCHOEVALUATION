@@ -1,10 +1,10 @@
 {
   "audience": "PATIENT_PUBLIC",
   "status": "APPROVED",
-  "version": "patient-guide-v0.7.1",
+  "version": "patient-guide-v021.1",
   "approval": {
-    "basis": "Audit code/vues v0.5–v0.6 et correction factuelle des capacités de résultat publié livrées en v0.7",
-    "date": "2026-10-02"
+    "basis": "Audit du code Feature 021 : formes immuables, rotation serveur, aucune action PatientAI ; documentation fonctionnelle, aucune approbation psychométrique.",
+    "date": "2026-10-04"
   },
   "source": "docs/patientai/knowledge/06-app007-functional-guide-patient.json",
   "topics": {
@@ -40,10 +40,14 @@
       ]
     },
     "questionnaires": {
-      "text": "Une passation utilise la définition et la version de questionnaire qui lui ont été assignées. Le patient peut répondre à une passation en cours avec consentement actif ; créer, importer, exporter ou versionner des questionnaires est réservé aux professionnels. PatientAI peut expliquer les métadonnées de la question autorisée, sans choisir de réponse ni prédire un profil.",
+      "text": "Une passation utilise la définition et la version de questionnaire qui lui ont été assignées. Le patient peut répondre à une passation en cours avec consentement actif ; créer, importer, exporter ou versionner des questionnaires est réservé aux professionnels. PatientAI peut expliquer les métadonnées de la question autorisée, sans choisir de réponse ni prédire un profil. Une forme est une version précise d’un questionnaire avec ses propres questions. Une passation conserve la forme assignée, même si une nouvelle version est créée. Lors d’une nouvelle assignation Ennéagramme pondérée, Laravel choisit une forme non encore utilisée dans le même groupe autorisé ; après épuisement, il réutilise la moins récemment assignée. Cela peut expliquer des questions différentes, sans promettre une équivalence psychométrique. Les formes DEMO sont synthétiques et non validées. Pour refaire un test, contactez votre professionnel : lui seul peut assigner une nouvelle passation. PatientAI ne choisit aucune réponse, ne crée aucune passation, ne publie rien et ne révèle ni règles internes ni résultat non publié.",
       "provenance": [
         "app/Http/Controllers/DefinitionController.php",
-        "resources/views/evaluations/show.blade.php"
+        "resources/views/evaluations/show.blade.php",
+        "app/Services/EnneagramFormRotation.php",
+        "app/Http/Controllers/AssessmentController.php",
+        "app/Models/AssessmentDefinition.php",
+        "app/Services/EnneagramDemoForms.php"
       ]
     },
     "passations": {

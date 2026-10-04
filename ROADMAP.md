@@ -89,3 +89,9 @@ Le hardening v1.0 est **code-complete** dans le dépôt et couvert par la valida
 
 ### 020 — PatientAI Conversation v1.1
 Feature 020 implémentée localement selon le Spec Kit. Normalisation/routeur déterministes, intents structurés, références conversationnelles chiffrées/scopées, dispatch vers outils Laravel existants, résolutions sans UUID utilisateur, refus sémantiques et réponse statique privacy-preserving. `php artisan test --compact --filter=PatientAi` : 300 tests / 3 251 assertions ; `php artisan test` : 345 / 3 660. **Code-complete PASS ; local-test-complete PASS ; Render recipe PENDING** (non exécutée). Migration additive créée, non appliquée à Aiven ; aucun provider externe, déploiement ou push. Feature 019/v1.0 reste la baseline de sécurité.
+
+## Feature 021 — Ennéagramme Forms Engine, livraison locale (4 octobre 2026)
+
+Code et tests locaux terminés : snapshots AssessmentDefinition, neuf dimensions et scoring pondéré déterministe/égalités, formes DEMO A/B/C, rotation serveur, revue/approbation contrôlées, interfaces pro/patient, reprise/verrouillage, publication et PatientAI read-only published-only. 68 tests dédiés / 361 assertions ; régression PatientAI 312 / 3 360 ; suite complète 413 / 4 026. Voir docs/VALIDATION.md pour les preuves et les deux écarts Pint préexistants hors périmètre.
+
+**Code readiness : PASS. Test readiness locale : PASS. Psychometric/content readiness : PENDING** (contenu DEMO uniquement, aucune source officielle/licence professionnelle vérifiable fournie). **Production/deployment readiness : PENDING** (MySQL/concurrence réelle/recette, migration Aiven, Render non exécutés). Le statut historique 007 PARTIAL n’est pas transformé en validation de contenu officiel. Aucun push ni accès distant dans la mission.

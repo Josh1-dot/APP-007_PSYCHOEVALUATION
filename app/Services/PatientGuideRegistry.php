@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Validator;
 
 class PatientGuideRegistry
 {
-    public const VERSION = 'patient-guide-v0.7.1';
+    public const VERSION = 'patient-guide-v021.1';
 
     public const SOURCE = 'docs/patientai/knowledge/06-app007-functional-guide-patient.json';
 

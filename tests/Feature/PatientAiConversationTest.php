@@ -16,6 +16,7 @@ use App\Services\PatientAiChat;
 use App\Services\PatientAiLifecycle;
 use App\Services\PatientContextFactory;
 use App\Services\PatientConversationReferences;
+use App\Services\PatientGuideRegistry;
 use App\Services\PatientMemoryService;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Events\QueryExecuted;
@@ -377,7 +378,7 @@ class PatientAiConversationTest extends TestCase
         $this->assertStringContainsString('ne constitue aucune information clinique', $memory);
 
         $documentation = $this->send($conversation, 'Comment utiliser l’espace patient ?');
-        $this->assertStringContainsString('patient-guide-v0.7.1', $documentation);
+        $this->assertStringContainsString(PatientGuideRegistry::VERSION, $documentation);
         $this->assertStringNotContainsString('notes cliniques', $documentation);
         Http::assertNothingSent();
     }

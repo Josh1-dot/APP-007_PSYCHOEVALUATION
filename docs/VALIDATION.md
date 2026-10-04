@@ -422,3 +422,41 @@ La hardening v1.0 est donc documentée comme code-complete et localement vérifi
 ### Limites
 
 Les tests locaux ne prouvent pas le comportement effectif sur Render/Aiven, le schéma distant, la concurrence MySQL, le navigateur/E2E ou l’expérience de recette réelle. La migration additive doit être revue/appliquée via le processus de livraison autorisé avant activation du nouveau code en production ; ne pas activer le flag ou déployer par déduction de la suite locale. Voir [V1.1-READINESS.md](patientai/V1.1-READINESS.md) pour le tableau de statut.
+
+## Feature 021 — livraison locale Ennéagramme (4 octobre 2026)
+
+Reprise exacte de HEAD `dfac184` et du working tree Feature 021 non commité. Avant toute modification : git status, git diff --check, lecture des specs/fichiers existants et `php artisan test tests/Feature/EnneagramAssessmentTest.php` : **11 tests / 57 assertions**, verts. Ces 11 tests sont conservés, uniquement formatés par Pint. Laravel 13.33.0 / PHPUnit 12.5.36 confirmés par composer show --direct ; aucune dépendance changée.
+
+### Commandes finales et résultats
+
+| Contrôle | Résultat |
+|---|---|
+| `php artisan test tests/Feature/EnneagramAssessmentTest.php` | 11 tests / 57 assertions, succès |
+| `php artisan test --compact tests/Feature/EnneagramAssessmentTest.php tests/Feature/EnneagramWorkflowTest.php tests/Feature/EnneagramMigrationTest.php` | 68 tests / 361 assertions, succès |
+| `php artisan test --compact --filter=PatientAi` | 312 tests / 3 360 assertions, succès |
+| `php artisan test --compact tests/Feature/EnneagramWorkflowTest.php tests/Feature/WorkflowTest.php tests/Feature/CompletionTest.php` | 84 tests / 524 assertions, succès |
+| `php artisan test` | 413 tests / 4 026 assertions, succès |
+| `vendor/bin/pint --dirty --format agent` | succès, fichiers modifiés formatés |
+| `./vendor/bin/pint --test` sur les fichiers PHP de cette livraison | succès |
+| `./vendor/bin/pint --test` global | échec sur 2 fichiers inchangés de HEAD : Backups.php et PatientAiAppointmentTest.php ; mêmes écarts confirmés sur copies de HEAD dans /tmp, aucune modification hors périmètre |
+| `php artisan route:list --except-vendor --no-interaction` | 80 routes, dont revue/approbation professionnelles |
+| `php artisan view:cache --no-interaction` | succès ; PDF réellement rendu dans les tests |
+| `git diff --check` | succès |
+| Scan ciblé diff + nouveaux fichiers + comparaison avec valeurs sensibles locales | aucun motif de clé privée/API, aucune valeur sensible locale retrouvée, aucun fichier .env/certificat/clé ajouté |
+
+Les premiers tests additionnels ont révélé une acceptation de booléen pour une échelle : correction de la validation du moteur et du flux de réponses. Un premier passage complet a révélé deux échecs PDF causés par des directives Blade accolées : correction et couverture PDF ajoutée, puis suite complète relancée verte. L’ancien test conversationnel contenant en dur la version du guide vérifie désormais PatientGuideRegistry::VERSION ; aucun contrôle de sécurité affaibli. Les fixtures self-report existantes et les 14 rubriques/imports RAG sont préservés.
+
+### Preuves Feature 021
+
+- Trois formes synthétiques A/B/C : neuf items chacune, DEMO, non validées, licensed=false, provenance originale explicite, aucun reçu APPROVED. Demi-tour DEMO→revue interdit et nouvelle version DEMO ne peut pas perdre ce marquage. APPROVED n’est exercé que par fixtures de tests, avec fausses références réservées à SQLite ; aucune source officielle n’est revendiquée.
+- Scoring : reproduction exacte, neuf dimensions, pondérations/multi-contributions, reverse, arrondi, égalités complètes et absence de gagnant arbitraire, booléens/choix et legacy. Vingt-six configurations négatives (provenance/langue/version/doublons/règles/maps/dimensions/poids/points/reverse/choix/bornes), six réponses invalides ; les infinis sont rejetés par le cast JSON avant calcul.
+- Rotation : unused puis LRU, historique indépendant par patient, tenant, refus DRAFT, dernière version par forme, quatre assignations A/B/C/A par routes réelles sous transaction ; Client lockForUpdate englobe sélection et insertion. Pas de simulation de contention MySQL ni prétention de concurrence réelle validée sur SQLite.
+- Workflow : catalogue et contrôles de rôle, export/import professionnel des questions/règles sans reprise d’approbation, consentement requis, sauvegarde partielle/reprise, paramètres de forme falsifiés sans effet, nouvelle version sans modification historique, impossibilité de rebind/mutation du snapshot, chiffrement en base, soumission complète et verrou 409, résultats techniques réservés aux professionnels avant publication, PDF patient après publication, retrait de publication.
+- Migration : RefreshDatabase SQLite sur suites Feature et roundtrip up/down dédié DatabaseMigrations SQLite :memory: avec FK actives et historique référencé, conservation des questions et octets chiffrés de réponses/résultats ; backfill LEGACY/DEMO/DRAFT. Le rollback de FK SQLite requiert de sortir de la transaction englobante RefreshDatabase ; ce test utilise DatabaseMigrations, sans modifier la migration pour contourner une contrainte. Aucune migration sur la base applicative ou Aiven.
+- PatientAI : disponibilité/en cours, refaire non-mutatif, explication des formes sans équivalence psychométrique, aide whitelistée de la version assignée et refus de question étrangère, refus scoring map/poids/meilleure réponse/stratégie de type/diagnostic/secrets/usurpation. Résultat terminé ou draft/génération sans publication indisponible ; résultat publié pondéré disponible et fidélité exacte aux faits persistés, DTO sans règles/réponses/draft/générations. Renderer provider mensonger rejeté avec rollback de messages ; aucun nouveau scoring ni résultat inventé.
+- Isolation : autre patient du même cabinet et autre cabinet, UUID arbitraire, identifiants client/user/tenant falsifiés dans les requêtes. Les suites Features 019/020 couvrent aussi identité textuelle, conversations étrangères, compte inactif, consentement PatientAI, chiffrement, rétention/effacement/export, RAG/mémoire/injections et audit sans contenu. PatientContext/permissions/classifications n’ont pas été modifiés.
+- Réseau : fake déterministe, Http::preventStrayRequests/Http::fake/Http::assertNothingSent dans les tests Feature 021. Aucun endpoint, provider ou clé externe introduit ; les appels professionnels historiques sont simulés par la suite existante. Aucun appel API réel réalisé.
+
+### Readiness séparée
+
+SPEC-COMPLETE / CODE-COMPLETE / LOCAL-TEST-COMPLETE pour le périmètre technique local. Pint du périmètre vert ; dette de formatage globale préexistante sur deux fichiers inchangés. Source psychométrique officielle, licence/autorisation réelle et recette professionnelle de contenu : **PENDING**. Aucune forme opérationnelle APPROVED livrée ; DEMO ne permet aucune déclaration de validation psychométrique. MySQL/concurrence réelle, Aiven, Render et recette de production : **NON EXÉCUTÉS / PENDING**. Aucun push, accès Aiven ou déploiement Render.

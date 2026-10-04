@@ -70,6 +70,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/evaluations/{assessment}/pdf', [AssessmentController::class, 'pdf'])->name('evaluations.pdf');
     Route::get('/questionnaires', [DefinitionController::class, 'index']);
     Route::post('/questionnaires', [DefinitionController::class, 'store']);
+    Route::post('/questionnaires/{definition}/revoir', [DefinitionController::class, 'reviewEnneagram'])->name('questionnaires.enneagram.review');
+    Route::post('/questionnaires/{definition}/approuver', [DefinitionController::class, 'approveEnneagram'])->name('questionnaires.enneagram.approve');
     Route::get('/calendrier', [ModuleController::class, 'calendar'])->name('calendar.index');
     Route::post('/calendrier', [ModuleController::class, 'appointment']);
     Route::post('/calendrier/{appointment}/annuler', [ModuleController::class, 'cancel']);

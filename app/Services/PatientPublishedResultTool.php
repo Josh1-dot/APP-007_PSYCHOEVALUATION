@@ -28,7 +28,7 @@ class PatientPublishedResultTool
             if (! $publication || ! is_string($publication->published_content) || trim($publication->published_content) === '') {
                 return new PatientPublishedResultData;
             }
-            $definition = $assessment->definition()->where('tenant_id', $context->tenantId)->first(['id', 'name', 'version', 'kind', 'is_demo', 'questions']);
+            $definition = $assessment->definition()->where('tenant_id', $context->tenantId)->first(['id', 'name', 'version', 'kind', 'is_demo', 'questions', 'engine_version', 'form_key']);
             if (! $definition) {
                 return new PatientPublishedResultData;
             }
@@ -56,6 +56,9 @@ class PatientPublishedResultTool
         if (! isset($results['scores'])) {
             return true;
         }
+        if ($definition->engine_version === EnneagramScoring::ENGINE_VERSION && (($results['engine'] ?? null) !== EnneagramScoring::ENGINE_VERSION || ($results['method_version'] ?? null) !== EnneagramScoring::ENGINE_VERSION || ($results['form_key'] ?? null) !== $definition->form_key || ($results['maximum'] ?? null) !== 100 || ! is_array($results['scores'] ?? null) || array_keys($results['scores'] ?? []) !== EnneagramScoring::DIMENSIONS)) {
+            return false;
+        }
         $scores = $results['scores'];
         $maximum = $results['maximum'] ?? null;
         if (! is_array($scores) || count($scores) > 9 || ! $this->number($maximum) || $maximum <= 0 || (isset($results['method']) && (! is_string($results['method']) || mb_strlen($results['method']) > 1000))) {
@@ -63,7 +66,7 @@ class PatientPublishedResultTool
         }
         $allowed = match ($definition->kind) {
             'gordon' => ['A', 'B', 'C', 'D'],
-            'enneagramme' => array_column($definition->questions ?? [], 'id'),
+            'enneagramme' => $definition->engine_version === EnneagramScoring::ENGINE_VERSION ? EnneagramScoring::DIMENSIONS : array_column($definition->questions ?? [], 'id'),
             default => [],
         };
         if (array_diff(array_keys($scores), $allowed)) {

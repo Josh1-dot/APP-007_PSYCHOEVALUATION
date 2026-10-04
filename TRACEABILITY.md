@@ -178,3 +178,16 @@ Preuves locales SQLite uniquement ; migration applicative/Aiven, déploiement, s
 - Rendu : DTO assessment sans UUID pour le dialogue ([PatientAssessmentConversationResult](app/Services/PatientAssessmentConversationResult.php)); sélection de rendez-vous séparée du DTO provider ([PatientAppointmentSelection](app/Services/PatientAppointmentSelection.php)); FakeLlmProvider seulement.
 - Tests : [PatientAiConversationTest](tests/Feature/PatientAiConversationTest.php) : 14 tests / 115 assertions couvrant intent, résolution, ambiguïté, follow-up, expurgation, rétention, migration locale et contexte ; suites Feature 019 couvrent les frontières des outils, refus, mémoire et RAG. 300 tests PatientAI / 3 251 assertions et 345 tests complets / 3 660 assertions.
 - Statut : code-complete PASS ; local-test-complete PASS ; Render recipe PENDING, non exécutée. Migration non appliquée à Aiven ; aucun provider externe, déploiement ou push.
+
+## Feature 021 — traçabilité locale (4 octobre 2026)
+
+| Tâches | Implémentation / preuve |
+|---|---|
+| REV-001, 001–004, 013, 015 | AssessmentDefinition, migration additive 2026_10_02_233312, EnneagramScoring/Scoring ; EnneagramAssessmentTest, EnneagramWorkflowTest, EnneagramMigrationTest |
+| 005–007, 014 | EnneagramDemoForms + DemoSeeder, EnneagramFormRotation, AssessmentController::assign/answers, protection du lien Assessment ; routes réelles A/B/C/A, transaction, snapshot, reprise, verrou |
+| 008–010, 016 | DefinitionController review/approve/export/store ; vues definitions et evaluations index/show/results/pdf ; rôles, consentement, chiffrement, publication/dépublication |
+| 011–012, 017 | Alias ConversationIntentRouter, guide patient-guide-v021.1, refus PromptRegistry, whitelist pondérée PatientPublishedResultTool ; DTO existants inchangés ; tests adversariaux et toutes suites PatientAI |
+| 018–020 | docs/VALIDATION.md, architecture/roadmap/specs/tasks ; tests, Pint du périmètre, routes/Blade/diff/scan secrets ; livraison Git locale uniquement |
+| REV-002 — contenu externe | Garde-fou testé ; aucune source officielle fournie ni forme opérationnelle APPROVED. Approbation de contenu/licence professionnelle réelle reste PENDING. |
+
+68 tests dédiés / 361 assertions ; PatientAI 312 / 3 360 ; suite complète 413 / 4 026. Code/local tests PASS, contenu psychométrique et déploiement PENDING. Concurrence MySQL non validée ; deux écarts Pint globaux présents dans HEAD et non modifiés. Aucun changement aux permissions/classifications PatientAI 019/020, aucun résultat privé ou non publié autorisé au provider.

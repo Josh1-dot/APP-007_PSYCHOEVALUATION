@@ -1,6 +1,7 @@
 @extends('layout') @section('title',$assessment->definition->name) @section('subtitle',$assessment->client->full_name.' · Version '.$assessment->definition->version.' · '.$assessment->definition->engine_version)
 @section('actions')@include('partials.status',['status'=>$assessment->status]) @if(auth()->user()->isProfessional() || $assessment->status==='publie')<a class="btn secondary" href="/evaluations/{{ $assessment->id }}/pdf">Télécharger le PDF</a>@endif @endsection
 @section('content')
+@if($assessment->definition->kind==='enneagramme')<p>Forme {{ $assessment->definition->form_key ?? 'LEGACY' }} · version {{ $assessment->definition->version }} · {{ $assessment->definition->content_status ?? ($assessment->definition->is_demo ? 'DEMO' : 'DRAFT') }}</p>@endif
 @if($assessment->definition->is_demo)<div class="alert info">Questionnaire de démonstration. Il ne constitue pas un instrument psychométrique validé.</div>@endif
 <div class="workflow"><span class="done">1. Assignation</span><span class="{{ $assessment->status!=='en_cours'?'done':'current' }}">2. Passation</span><span class="{{ $assessment->status==='termine'?'current':'' }}">3. Révision</span><span class="{{ $assessment->status==='publie'?'done':'' }}">4. Publication</span></div>
 @if(auth()->user()->role==='patient' && $assessment->status==='en_cours')

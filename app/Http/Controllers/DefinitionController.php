@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\AssessmentDefinition;
 use App\Services\Access;
+use App\Services\EnneagramScoring;
 use App\Services\Scoring;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -21,14 +23,23 @@ class DefinitionController extends Controller
         return view('definitions.index', ['definitions' => AssessmentDefinition::latest()->get()]);
     }
 
-    public function store(Request $r, Scoring $scoring)
+    public function store(Request $r, Scoring $scoring, EnneagramScoring $enneagram)
     {
         Access::publisher();
         if ($r->hasFile('questions_file')) {
             $r->validate(['questions_file' => 'file|max:200|mimetypes:application/json,text/plain']);
-            $r->merge(['questions' => file_get_contents($r->file('questions_file')->getRealPath())]);
+            $fileContents = file_get_contents($r->file('questions_file')->getRealPath());
+            $snapshot = json_decode($fileContents, true);
+            if ($r->input('kind') === 'enneagramme' && is_array($snapshot) && ($snapshot['engine_version'] ?? null) === EnneagramScoring::ENGINE_VERSION) {
+                if (($snapshot['is_demo'] ?? false) && ! $r->boolean('is_demo')) {
+                    throw ValidationException::withMessages(['is_demo' => 'Un export DEMO doit rester DEMO.']);
+                }
+                $r->merge(['questions' => json_encode($snapshot['questions'] ?? null), 'form_key' => $snapshot['form_key'] ?? null, 'scoring_rules' => json_encode($snapshot['scoring_rules'] ?? null)]);
+            } else {
+                $r->merge(['questions' => $fileContents]);
+            }
         }
-        $d = $r->validate(['name' => 'required|string|max:200', 'kind' => 'required|in:gordon,enneagramme,besoins,personnalise', 'questions' => 'required|json|max:100000', 'previous_id' => 'nullable|integer', 'is_demo' => 'nullable|boolean', 'source_reference' => 'nullable|string|max:2000', 'licensed' => 'nullable|boolean']);
+        $d = $r->validate(['name' => 'required|string|max:200', 'kind' => 'required|in:gordon,enneagramme,besoins,personnalise', 'questions' => 'required|json|max:100000', 'previous_id' => 'nullable|integer', 'is_demo' => 'nullable|boolean', 'source_reference' => 'nullable|string|max:2000', 'licensed' => 'nullable|boolean', 'form_key' => 'nullable|string|max:40', 'scoring_rules' => 'nullable|json|max:100000']);
         if ($d['kind'] !== 'personnalise' && ! $r->boolean('is_demo') && (! $r->boolean('licensed') || ! $r->filled('source_reference'))) {
             throw ValidationException::withMessages(['source_reference' => 'Indiquez la source et confirmez votre autorisation d’utilisation, ou marquez cette version comme démonstration.']);
         }
@@ -44,17 +55,63 @@ class DefinitionController extends Controller
                 throw ValidationException::withMessages(['questions' => 'Chaque échelle nécessite un minimum inférieur au maximum.']);
             }
         }
-        if ($d['kind'] === 'enneagramme' && (count($questions) !== 9 || collect($questions)->contains(fn ($q) => $q['type'] !== 'scale' || $q['min'] !== 0 || $q['max'] !== 100))) {
-            throw ValidationException::withMessages(['questions' => 'L’Ennéagramme nécessite neuf échelles de 0 à 100.']);
+        $previousDefinition = isset($d['previous_id']) ? AssessmentDefinition::findOrFail($d['previous_id']) : null;
+        if ($previousDefinition && $previousDefinition->kind !== $d['kind']) {
+            throw ValidationException::withMessages(['previous_id' => 'Une nouvelle version doit conserver la famille de questionnaire.']);
         }
-        DB::transaction(function () use ($d, $questions, $scoring) {
+        $weightedEnneagram = $d['kind'] === 'enneagramme' && ($r->filled('form_key') || $r->filled('scoring_rules') || $previousDefinition?->engine_version === EnneagramScoring::ENGINE_VERSION);
+
+        if (
+            $weightedEnneagram
+            && $previousDefinition
+            && $previousDefinition->engine_version === EnneagramScoring::ENGINE_VERSION
+            && strtoupper((string) $previousDefinition->form_key) !== strtoupper((string) ($d['form_key'] ?? ''))
+        ) {
+            throw ValidationException::withMessages([
+                'form_key' => 'Une nouvelle version doit conserver la même form_key.',
+            ]);
+        }
+
+        if ($weightedEnneagram && $previousDefinition?->is_demo && ! $r->boolean('is_demo')) {
+            throw ValidationException::withMessages(['is_demo' => 'Une nouvelle version de contenu DEMO doit rester DEMO. Une source autorisée nécessite une famille distincte.']);
+        }
+
+        $scoringRules = $weightedEnneagram && isset($d['scoring_rules']) ? json_decode($d['scoring_rules'], true) : null;
+        if ($weightedEnneagram && (! $r->filled('form_key') || ! is_array($scoringRules))) {
+            throw ValidationException::withMessages(['scoring_rules' => 'Une forme versionnée exige une form_key et des règles JSON de scoring.']);
+        }
+        if ($d['kind'] === 'enneagramme' && ! $weightedEnneagram && (count($questions) !== 9 || collect($questions)->contains(fn ($q) => $q['type'] !== 'scale' || ($q['min'] ?? null) !== 0 || ($q['max'] ?? null) !== 100))) {
+            throw ValidationException::withMessages(['questions' => 'L’ancien format self-report-v1 exige neuf échelles de 0 à 100.']);
+        }
+        DB::transaction(function () use ($d, $questions, $scoring, $enneagram, $weightedEnneagram, $scoringRules) {
             $previous = isset($d['previous_id']) ? AssessmentDefinition::lockForUpdate()->findOrFail($d['previous_id']) : null;
             $version = $previous ? (AssessmentDefinition::where('family', $previous->family)->max('version') + 1) : 1;
-            $model = new AssessmentDefinition(['family' => $previous?->family ?? (string) Str::uuid(), 'name' => $d['name'], 'kind' => $d['kind'], 'version' => $version, 'engine_version' => match ($d['kind']) {
-                'gordon' => 'gordon-v1','enneagramme' => 'self-report-v1',default => 'raw-v1'
-            }, 'questions' => $questions, 'is_demo' => $d['is_demo'] ?? false, 'source_reference' => $d['source_reference'] ?? null, 'licensed' => $d['licensed'] ?? false]);
+            $isDemo = (bool) ($d['is_demo'] ?? false);
+            $model = new AssessmentDefinition([
+                'family' => $previous?->family ?? (string) Str::uuid(),
+                'name' => $d['name'],
+                'kind' => $d['kind'],
+                'version' => $version,
+                'engine_version' => match (true) {
+                    $d['kind'] === 'gordon' => 'gordon-v1',
+                    $weightedEnneagram => EnneagramScoring::ENGINE_VERSION,
+                    $d['kind'] === 'enneagramme' => 'self-report-v1',
+                    default => 'raw-v1',
+                },
+                'questions' => $questions,
+                'is_demo' => $isDemo,
+                'source_reference' => $d['source_reference'] ?? null,
+                'licensed' => $d['licensed'] ?? false,
+                'form_key' => $weightedEnneagram ? strtoupper($d['form_key']) : ($d['kind'] === 'enneagramme' ? 'LEGACY' : null),
+                'scoring_rules' => $scoringRules,
+                'content_status' => $d['kind'] === 'enneagramme' ? ($weightedEnneagram ? ($isDemo ? 'DEMO' : 'DRAFT') : ($isDemo ? 'DEMO' : 'DRAFT')) : null,
+                'created_by' => auth()->id(),
+            ]);
             if ($d['kind'] === 'gordon') {
                 $scoring->calculate($model, []);
+            }
+            if ($weightedEnneagram) {
+                $enneagram->validateDefinition($model);
             }
             $model->save();
             Access::audit('questionnaire.version_creee', $model);
@@ -63,10 +120,108 @@ class DefinitionController extends Controller
         return back()->with('success', 'Version immuable créée. Les passations existantes conservent leur version.');
     }
 
+    public function reviewEnneagram(Request $request, AssessmentDefinition $definition, EnneagramScoring $scoring): RedirectResponse
+    {
+        Access::publisher();
+        $request->validate(['reviewed' => 'accepted']);
+
+        DB::transaction(function () use ($definition, $scoring): void {
+            $locked = AssessmentDefinition::query()
+                ->lockForUpdate()
+                ->findOrFail($definition->id);
+
+            abort_unless(
+                $locked->kind === 'enneagramme'
+                && $locked->engine_version === EnneagramScoring::ENGINE_VERSION,
+                404
+            );
+
+            abort_if(
+                $locked->is_demo || $locked->content_status === 'DEMO',
+                422,
+                'Une forme DEMO reste une démonstration et ne peut pas entrer dans le workflow d’approbation.'
+            );
+
+            abort_unless(
+                $locked->content_status === 'DRAFT',
+                409,
+                'Seule une forme en brouillon peut être revue.'
+            );
+
+            $scoring->validateDefinition($locked);
+
+            $locked->forceFill([
+                'content_status' => 'REVIEWED',
+                'reviewed_by' => auth()->id(),
+                'reviewed_at' => now(),
+            ])->save();
+
+            Access::audit('enneagramme.forme_revuee', $locked);
+        });
+
+        return back()->with(
+            'success',
+            'Forme Ennéagramme relue. L’approbation reste une étape distincte.'
+        );
+    }
+
+    public function approveEnneagram(Request $request, AssessmentDefinition $definition, EnneagramScoring $scoring): RedirectResponse
+    {
+        Access::publisher();
+        $request->validate(['approved' => 'accepted']);
+
+        DB::transaction(function () use ($definition, $scoring): void {
+            $locked = AssessmentDefinition::query()
+                ->lockForUpdate()
+                ->findOrFail($definition->id);
+
+            abort_unless(
+                $locked->kind === 'enneagramme'
+                && $locked->engine_version === EnneagramScoring::ENGINE_VERSION,
+                404
+            );
+
+            abort_unless(
+                $locked->content_status === 'REVIEWED'
+                && $locked->reviewed_by
+                && $locked->reviewed_at,
+                409,
+                'Une revue préalable vérifiable est requise.'
+            );
+
+            abort_unless(
+                ! $locked->is_demo
+                && $locked->licensed
+                && filled($locked->source_reference),
+                422,
+                'Une source exacte et une autorisation d’utilisation sont requises ; une forme DEMO ne peut pas être approuvée.'
+            );
+
+            $scoring->validateDefinition($locked);
+
+            $locked->forceFill([
+                'content_status' => 'APPROVED',
+                'approved_by' => auth()->id(),
+                'approved_at' => now(),
+            ])->save();
+
+            Access::audit('enneagramme.forme_approuvee', $locked);
+        });
+
+        return back()->with(
+            'success',
+            'Forme approuvée pour assignation. Cette approbation interne n’est pas une validation psychométrique.'
+        );
+    }
+
     public function export(AssessmentDefinition $definition): StreamedResponse
     {
         Access::professional();
 
-        return response()->streamDownload(fn () => print (json_encode($definition->questions, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)), 'questionnaire-'.$definition->id.'-v'.$definition->version.'.json', ['Content-Type' => 'application/json']);
+        $snapshot = $definition->engine_version === EnneagramScoring::ENGINE_VERSION
+            ? $definition->only(['name', 'kind', 'version', 'engine_version', 'form_key', 'questions', 'scoring_rules', 'is_demo', 'content_status', 'source_reference', 'licensed'])
+            : $definition->questions;
+
+        return response()->streamDownload(fn () => print (json_encode($snapshot, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)), 'questionnaire-'.$definition->id.'-v'.$definition->version.'.json', ['Content-Type' => 'application/json']);
     }
 }

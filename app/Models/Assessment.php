@@ -9,6 +9,11 @@ class Assessment extends TenantModel
     protected static function booted(): void
     {
         parent::booted();
+        static::updating(function (Assessment $assessment): void {
+            if ($assessment->isDirty('assessment_definition_id') && AssessmentDefinition::whereKey($assessment->getOriginal('assessment_definition_id'))->where('kind', 'enneagramme')->exists()) {
+                abort(409, 'La forme assignée à cette passation est immuable.');
+            }
+        });
         static::creating(function (Assessment $assessment): void {
             $assessment->uuid = (string) Str::uuid();
         });

@@ -1,0 +1,346 @@
+]633;E;echo "===== DefinitionController.php =====";45774276-1c6a-4c79-8bff-3f5796a9f603]633;C===== DefinitionController.php =====
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\AssessmentDefinition;
+use App\Services\Access;
+use App\Services\EnneagramScoring;
+use App\Services\Scoring;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+
+class DefinitionController extends Controller
+{
+    public function index()
+    {
+        Access::professional();
+
+        return view('definitions.index', ['definitions' => AssessmentDefinition::latest()->get()]);
+    }
+
+    public function store(Request $r, Scoring $scoring, EnneagramScoring $enneagram)
+    {
+        Access::publisher();
+        if ($r->hasFile('questions_file')) {
+            $r->validate(['questions_file' => 'file|max:200|mimetypes:application/json,text/plain']);
+            $r->merge(['questions' => file_get_contents($r->file('questions_file')->getRealPath())]);
+        }
+        $d = $r->validate(['name' => 'required|string|max:200', 'kind' => 'required|in:gordon,enneagramme,besoins,personnalise', 'questions' => 'required|json|max:100000', 'previous_id' => 'nullable|integer', 'is_demo' => 'nullable|boolean', 'source_reference' => 'nullable|string|max:2000', 'licensed' => 'nullable|boolean', 'form_key' => 'nullable|string|max:40', 'scoring_rules' => 'nullable|json|max:100000']);
+        if ($d['kind'] !== 'personnalise' && ! $r->boolean('is_demo') && (! $r->boolean('licensed') || ! $r->filled('source_reference'))) {
+            throw ValidationException::withMessages(['source_reference' => 'Indiquez la source et confirmez votre autorisation d’utilisation, ou marquez cette version comme démonstration.']);
+        }
+        $questions = json_decode($d['questions'], true);
+        if (! is_array($questions) || ! array_is_list($questions) || ! $questions || count($questions) > 250) {
+            throw ValidationException::withMessages(['questions' => 'Fournissez une liste de 1 à 250 questions.']);
+        }
+        Validator::make(['questions' => $questions], ['questions.*.id' => 'required|string|regex:/^[a-zA-Z][a-zA-Z0-9_]{0,39}$/|distinct', 'questions.*.label' => 'required|string|max:1000', 'questions.*.type' => 'required|in:boolean,scale,choice,text', 'questions.*.required' => 'sometimes|boolean', 'questions.*.options' => 'sometimes|array|min:2|max:30', 'questions.*.options.*' => 'required|string|max:300', 'questions.*.dimension' => 'sometimes|in:A,B,C,D', 'questions.*.min' => 'sometimes|integer|min:0|max:100', 'questions.*.max' => 'sometimes|integer|min:1|max:100'])->validate();
+        foreach ($questions as $q) {
+            if ($q['type'] === 'choice' && count($q['options'] ?? []) < 2) {
+                throw ValidationException::withMessages(['questions' => 'Chaque choix multiple nécessite au moins deux options.']);
+            }if ($q['type'] === 'scale' && (! isset($q['min'],$q['max']) || $q['min'] >= $q['max'])) {
+                throw ValidationException::withMessages(['questions' => 'Chaque échelle nécessite un minimum inférieur au maximum.']);
+            }
+        }
+        $previousDefinition = isset($d['previous_id']) ? AssessmentDefinition::findOrFail($d['previous_id']) : null;
+        if ($previousDefinition && $previousDefinition->kind !== $d['kind']) {
+            throw ValidationException::withMessages(['previous_id' => 'Une nouvelle version doit conserver la famille de questionnaire.']);
+        }
+        $weightedEnneagram = $d['kind'] === 'enneagramme' && ($r->filled('form_key') || $r->filled('scoring_rules') || $previousDefinition?->engine_version === EnneagramScoring::ENGINE_VERSION);
+        $scoringRules = $weightedEnneagram && isset($d['scoring_rules']) ? json_decode($d['scoring_rules'], true) : null;
+        if ($weightedEnneagram && (! $r->filled('form_key') || ! is_array($scoringRules))) {
+            throw ValidationException::withMessages(['scoring_rules' => 'Une forme versionnée exige une form_key et des règles JSON de scoring.']);
+        }
+        if ($d['kind'] === 'enneagramme' && ! $weightedEnneagram && (count($questions) !== 9 || collect($questions)->contains(fn ($q) => $q['type'] !== 'scale' || ($q['min'] ?? null) !== 0 || ($q['max'] ?? null) !== 100))) {
+            throw ValidationException::withMessages(['questions' => 'L’ancien format self-report-v1 exige neuf échelles de 0 à 100.']);
+        }
+        DB::transaction(function () use ($d, $questions, $scoring, $enneagram, $weightedEnneagram, $scoringRules) {
+            $previous = isset($d['previous_id']) ? AssessmentDefinition::lockForUpdate()->findOrFail($d['previous_id']) : null;
+            $version = $previous ? (AssessmentDefinition::where('family', $previous->family)->max('version') + 1) : 1;
+            $isDemo = (bool) ($d['is_demo'] ?? false);
+            $model = new AssessmentDefinition([
+                'family' => $previous?->family ?? (string) Str::uuid(),
+                'name' => $d['name'],
+                'kind' => $d['kind'],
+                'version' => $version,
+                'engine_version' => match (true) {
+                    $d['kind'] === 'gordon' => 'gordon-v1',
+                    $weightedEnneagram => EnneagramScoring::ENGINE_VERSION,
+                    $d['kind'] === 'enneagramme' => 'self-report-v1',
+                    default => 'raw-v1',
+                },
+                'questions' => $questions,
+                'is_demo' => $isDemo,
+                'source_reference' => $d['source_reference'] ?? null,
+                'licensed' => $d['licensed'] ?? false,
+                'form_key' => $weightedEnneagram ? strtoupper($d['form_key']) : ($d['kind'] === 'enneagramme' ? 'LEGACY' : null),
+                'scoring_rules' => $scoringRules,
+                'content_status' => $d['kind'] === 'enneagramme' ? ($weightedEnneagram ? ($isDemo ? 'DEMO' : 'DRAFT') : ($isDemo ? 'DEMO' : 'DRAFT')) : null,
+                'created_by' => auth()->id(),
+            ]);
+            if ($d['kind'] === 'gordon') {
+                $scoring->calculate($model, []);
+            }
+            if ($weightedEnneagram) {
+                $enneagram->validateDefinition($model);
+            }
+            $model->save();
+            Access::audit('questionnaire.version_creee', $model);
+        });
+
+        return back()->with('success', 'Version immuable créée. Les passations existantes conservent leur version.');
+    }
+
+    public function reviewEnneagram(Request $request, AssessmentDefinition $definition, EnneagramScoring $scoring): RedirectResponse
+    {
+        Access::publisher();
+        abort_unless($definition->kind === 'enneagramme' && $definition->engine_version === EnneagramScoring::ENGINE_VERSION, 404);
+        $request->validate(['reviewed' => 'accepted']);
+        abort_unless($definition->content_status === 'DRAFT', 409, 'Seule une forme en brouillon peut être revue.');
+        $scoring->validateDefinition($definition);
+        $definition->update(['content_status' => 'REVIEWED', 'reviewed_by' => auth()->id(), 'reviewed_at' => now()]);
+        Access::audit('enneagramme.forme_revuee', $definition);
+
+        return back()->with('success', 'Forme Ennéagramme relue. L’approbation reste une étape distincte.');
+    }
+
+    public function approveEnneagram(Request $request, AssessmentDefinition $definition, EnneagramScoring $scoring): RedirectResponse
+    {
+        Access::publisher();
+        abort_unless($definition->kind === 'enneagramme' && $definition->engine_version === EnneagramScoring::ENGINE_VERSION, 404);
+        $request->validate(['approved' => 'accepted']);
+        abort_unless($definition->content_status === 'REVIEWED' && $definition->reviewed_by && $definition->reviewed_at, 409, 'Une revue préalable est requise.');
+        abort_unless(! $definition->is_demo && $definition->licensed && filled($definition->source_reference), 422, 'Une source autorisée est requise ; une forme DEMO ne peut pas être approuvée.');
+        $scoring->validateDefinition($definition);
+        $definition->update(['content_status' => 'APPROVED', 'approved_by' => auth()->id(), 'approved_at' => now()]);
+        Access::audit('enneagramme.forme_approuvee', $definition);
+
+        return back()->with('success', 'Forme approuvée pour assignation. Cette approbation interne n’est pas une validation psychométrique.');
+    }
+
+    public function export(AssessmentDefinition $definition): StreamedResponse
+    {
+        Access::professional();
+
+        return response()->streamDownload(fn () => print (json_encode($definition->questions, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)), 'questionnaire-'.$definition->id.'-v'.$definition->version.'.json', ['Content-Type' => 'application/json']);
+    }
+}
+
+===== AssessmentDefinition.php =====
+<?php
+
+namespace App\Models;
+
+class AssessmentDefinition extends TenantModel
+{
+    protected static function booted(): void
+    {
+        parent::booted();
+        static::updating(function (AssessmentDefinition $definition): void {
+            if ($definition->kind === 'enneagramme' && $definition->isDirty(['family', 'name', 'kind', 'version', 'engine_version', 'questions', 'scoring_rules', 'form_key', 'source_reference', 'licensed', 'is_demo', 'created_by'])) {
+                abort(409, 'Une définition Ennéagramme versionnée est immuable ; créez une nouvelle version.');
+            }
+        });
+    }
+
+    protected function casts(): array
+    {
+        return ['questions' => 'array', 'scoring_rules' => 'array', 'is_demo' => 'boolean'];
+    }
+}
+
+===== Access.php =====
+<?php
+
+namespace App\Services;
+
+use App\Models\Assessment;
+use App\Models\AuditLog;
+use App\Models\Client;
+use App\Models\Document;
+
+class Access
+{
+    public static function professional(): void
+    {
+        abort_unless(auth()->user()->isProfessional(), 403);
+    }
+
+    public static function publisher(): void
+    {
+        abort_unless(auth()->user()->canPublish(), 403);
+    }
+
+    public static function client(Client $client): void
+    {
+        abort_unless($client->tenant_id === auth()->user()->tenant_id, 404);
+        abort_unless(auth()->user()->isProfessional() || (auth()->user()->role === 'patient' && $client->user_id === auth()->id()), 403);
+    }
+
+    public static function assessment(Assessment $assessment): void
+    {
+        self::client($assessment->client);
+    }
+
+    public static function document(Document $document): void
+    {
+        $u = auth()->user();
+        abort_unless($document->tenant_id === $u->tenant_id, 404);
+        if ($u->isProfessional()) {
+            return;
+        }
+        abort_unless($document->shared, 403);
+        if ($u->role === 'patient') {
+            abort_unless($document->client_id && $document->client_id === $u->client?->id, 403);
+        } elseif ($u->role === 'entreprise') {
+            abort_unless(! $document->client_id && $document->organization_id && $document->organization_id === $u->organization_id, 403);
+        } else {
+            abort(403);
+        }
+    }
+
+    public static function audit(string $action, $entity): void
+    {
+        AuditLog::create(['tenant_id' => auth()->user()->tenant_id, 'user_id' => auth()->id(), 'action' => $action, 'entity_type' => class_basename($entity), 'entity_id' => $entity->id]);
+    }
+}
+
+===== ROUTES QUESTIONNAIRES =====
+8:use App\Http\Controllers\DefinitionController;
+41:    Route::get('/questionnaires/{definition}/export', [DefinitionController::class, 'export']);
+71:    Route::get('/questionnaires', [DefinitionController::class, 'index']);
+72:    Route::post('/questionnaires', [DefinitionController::class, 'store']);
+73:    Route::post('/questionnaires/{definition}/revoir', [DefinitionController::class, 'reviewEnneagram'])->name('questionnaires.enneagram.review');
+74:    Route::post('/questionnaires/{definition}/approuver', [DefinitionController::class, 'approveEnneagram'])->name('questionnaires.enneagram.approve');
+
+===== FEATURE 021 MIGRATION =====
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('assessment_definitions', function (Blueprint $table) {
+            $table->string('form_key', 40)->nullable();
+            $table->json('scoring_rules')->nullable();
+            $table->string('content_status', 20)->nullable();
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('reviewed_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('reviewed_at')->nullable();
+            $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('approved_at')->nullable();
+            $table->index(['tenant_id', 'family', 'content_status', 'form_key', 'version'], 'assessment_definitions_ennea_rotation_index');
+        });
+        foreach (DB::table('assessment_definitions')->where('kind', 'enneagramme')->get(['id', 'is_demo']) as $definition) {
+            DB::table('assessment_definitions')->where('id', $definition->id)->update([
+                'form_key' => 'LEGACY',
+                'content_status' => $definition->is_demo ? 'DEMO' : 'DRAFT',
+            ]);
+        }
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('assessment_definitions', function (Blueprint $table) {
+            $table->dropIndex('assessment_definitions_ennea_rotation_index');
+            $table->dropConstrainedForeignId('created_by');
+            $table->dropConstrainedForeignId('reviewed_by');
+            $table->dropConstrainedForeignId('approved_by');
+            $table->dropColumn(['form_key', 'scoring_rules', 'content_status', 'reviewed_at', 'approved_at']);
+        });
+    }
+};
+
+===== DEFINITION TESTS EXISTANTS =====
+tests/Feature/WorkflowTest.php:73:        foreach (['/', '/clients', '/clients/'.$this->client->id, '/evaluations', '/evaluations/'.$this->assessment->id, '/organisations', '/questionnaires', '/calendrier', '/messagerie', '/documents', '/courriers', '/comparateur', '/espace-travail', '/guide', '/corbeille', '/administration', '/profil'] as $url) {
+tests/Feature/WorkflowTest.php:184:        $this->actingAs($this->admin)->post('/questionnaires', ['name' => 'Nouvelle version', 'kind' => 'personnalise', 'previous_id' => $this->definition->id, 'questions' => json_encode([['id' => 'nouveau', 'label' => 'Nouvelle question', 'type' => 'text']])])->assertRedirect()->assertSessionHasNoErrors();
+tests/Feature/WorkflowTest.php:187:        $this->post('/questionnaires', ['name' => 'Grille invalide', 'kind' => 'gordon', 'is_demo' => true, 'questions' => json_encode([['id' => 'a', 'label' => 'Question', 'type' => 'boolean', 'dimension' => 'A']])])->assertSessionHasErrors('definition');
+tests/Feature/PatientAiHelpTest.php:82:        $this->assertDoesNotMatchRegularExpression('#/(evaluations|questionnaires|administration|droits)(?:\s|$)#', (new PatientHelpFormatter)->format($data));
+tests/Feature/PatientAiHelpTest.php:134:        $this->get('/questionnaires')->assertForbidden();
+tests/Feature/PatientAiHelpTest.php:305:        foreach (['Comment fonctionne mon compte ?', 'Comment fonctionne le consentement ?', 'Comment fonctionne mon tableau de bord ?', 'Où sont mes évaluations ?', 'Comment fonctionne une passation ?', 'Comment fonctionnent les questionnaires ?', 'Comment voir mes résultats ?', 'Comment voir mes rendez-vous ?', 'Comment fonctionne la messagerie ?', 'Comment accéder à mes documents ?', 'Confidentialité', 'Quels sont mes droits ?', 'Que fait PatientAI ?', 'Comment contacter l’assistance ?'] as $message) {
+tests/Feature/EnneagramAssessmentTest.php:86:            'content_status' => 'DEMO',
+tests/Feature/EnneagramAssessmentTest.php:190:            'content_status' => 'DEMO',
+tests/Feature/EnneagramAssessmentTest.php:237:            $first['content_status']
+tests/Feature/EnneagramAssessmentTest.php:563:            'content_status' => 'DRAFT',
+tests/Feature/PatientAiRagTest.php:128:        $this->assertNotNull($document->fresh()->reviewed_at);
+tests/Feature/PatientAiRagTest.php:133:        $this->assertNotNull($document->fresh()->approved_at);
+tests/Feature/PatientAiRagTest.php:167:        return [['status', 'draft'], ['status', 'review'], ['status', 'approved'], ['status', 'retired'], ['status', 'rejected'], ['review_status', 'pending'], ['review_status', 'rejected'], ['approval_status', 'pending'], ['reviewed_by', null], ['approved_at', null], ['audience', null], ['audience', 'UNKNOWN']];
+tests/Feature/PatientAiRagTest.php:309:            $this->assertNull($d->reviewed_at);
+tests/Feature/CompletionTest.php:217:        $this->actingAs($admin)->post('/questionnaires', ['name' => 'Test officiel', 'kind' => 'enneagramme', 'questions' => json_encode($questions)])->assertSessionHasErrors('source_reference');
+tests/Feature/CompletionTest.php:218:        $this->post('/questionnaires', ['name' => 'Référentiel autorisé', 'kind' => 'enneagramme', 'questions' => json_encode($questions), 'licensed' => 1, 'source_reference' => 'Manuel fourni par le cabinet'])->assertRedirect()->assertSessionHasNoErrors();
+tests/Feature/CompletionTest.php:220:        $this->assertSame('Manuel fourni par le cabinet', $definition->source_reference);
+tests/Feature/CompletionTest.php:221:        $response = $this->get('/questionnaires/'.$definition->id.'/export')->assertOk();
+
+===== FEATURE 021 TASKS =====
+# Tasks — Feature 021 Ennéagramme Forms Engine
+
+**Statut initial :** Spec Kit en cours de création ; code et statut d’approbation psychométrique non commencés à cet instant. La livraison finale mettra à jour ces cases à partir des tests effectivement exécutés.
+
+## SPEC — décisions et preuves initiales
+- [x] E021-SPEC-001 Auditer les définitions, le moteur, seeds, routes et tests existants.
+- [x] E021-SPEC-002 Constater qu’aucune source psychométrique officielle/licenciée n’est présente dans le dépôt.
+- [x] E021-SPEC-003 Choisir le snapshot JSON AssessmentDefinition/Assessment, sans seconde banque redondante.
+- [x] E021-SPEC-004 Définir les statuts DEMO/DRAFT/REVIEWED/APPROVED, scoring versionné, rotation et égalité.
+- [x] E021-SPEC-005 Définir sécurité, PatientAI, matrice d’acceptation et non-objectifs.
+
+## Pré-implémentation
+- [ ] E021-REV-001 Confirmer que la démo synthétique reste étiquetée DEMO/non validée.
+- [ ] E021-REV-002 Confirmer toute source officielle/licenciée avant de pouvoir marquer une forme APPROVED.
+
+## Backend et scoring
+- [ ] E021-001 Migration additive de métadonnées form/scoring/approval et backfill sûr des définitions Ennéagramme présentes.
+- [ ] E021-002 Validation stricte des items, dimensions, réponse→points, poids, reverse et provenance.
+- [ ] E021-003 Workflow versionné, immutabilité des formes utilisées et transitions review/approve auditées.
+- [ ] E021-004 `enneagramme-weighted-v1` déterministe, normalisé, neuf dimensions, égalités explicites, legacy `self-report-v1` conservé.
+- [ ] E021-005 Trois formes DEMO versionnées, banque suffisante pour les neuf dimensions et scoring du pipeline.
+- [ ] E021-006 Rotation serveur au moment de l’assignation, sans répétition avant épuisement et reuse LRU déterministe.
+- [ ] E021-007 Snapshot historique inchangé et soumission verrouillée sans modification d’items en cours.
+
+## Interfaces et PatientAI
+- [ ] E021-008 Interface pro expose formes, version, état, provenance et approval actions.
+- [ ] E021-009 Formulaire patient affiche la forme/version/DEMO, reprend une assignation et soumet selon workflow existant.
+- [ ] E021-010 Résultat technique par dimension au professionnel ; visibilité patient limitée à la publication.
+- [ ] E021-011 PatientAI couvre disponibilité, retake non-mutatif, explication de forme et résultat publié uniquement.
+- [ ] E021-012 Tests adversariaux PatientAI et régressions Features 019/020 sans affaiblissement.
+
+## Validation, documentation, livraison
+- [ ] E021-013 Tests scoring, égalité, neuf dimensions, déterminisme et règles invalides.
+- [ ] E021-014 Tests rotation A/B/C, exhaustion/reuse, deux patients, tenant, concurrents/transaction locale.
+- [ ] E021-015 Tests migration up/down sous SQLite RefreshDatabase, historiques et compatibilité legacy.
+- [ ] E021-016 Tests Feature workflow patient/pro/consent/lock/published-only.
+- [ ] E021-017 Tests PatientAI messages, refus manipulation, resultat non publié et outil de résultat publié.
+- [ ] E021-018 Suite PatientAI, suite complète, Pint, routes, diff/secret checks.
+- [ ] E021-019 Mettre à jour ROADMAP, TRACEABILITY, ARCHITECTURE, VALIDATION et readiness distincte.
+- [ ] E021-020 Commit local uniquement ; aucun push, accès Aiven ou déploiement Render.
+
+## Stop conditions
+
+Ne pas marquer `APPROVED` sans source exacte/licence et approbation professionnelle vérifiables. Toute démo reste `DEMO`. Arrêter si le changement exige une modification destructive, un accès Aiven/Render, l’exposition du score privé à PatientAI ou une modification du modèle de permissions 019/020.
+
+===== GIT STATUS =====
+ M app/Http/Controllers/AssessmentController.php
+ M app/Http/Controllers/DefinitionController.php
+ M app/Models/AssessmentDefinition.php
+ M app/Services/Scoring.php
+ M routes/web.php
+?? app/Services/EnneagramFormRotation.php
+?? app/Services/EnneagramScoring.php
+?? database/migrations/2026_10_02_233312_add_enneagram_form_metadata_to_assessment_definitions.php
+?? specs/021-enneagramme-forms-engine/
+?? tests/Feature/EnneagramAssessmentTest.php

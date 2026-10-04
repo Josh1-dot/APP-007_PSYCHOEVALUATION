@@ -11,6 +11,7 @@ use App\Models\Interpretation;
 use App\Models\Organization;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\EnneagramDemoForms;
 use App\Services\Scoring;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
@@ -46,7 +47,8 @@ class DemoSeeder extends Seeder
         for ($i = 1; $i <= 9; $i++) {
             $questions[] = ['id' => 'type'.$i, 'label' => 'Type '.$i.' : votre pourcentage auto-déclaré après échange avec le professionnel', 'type' => 'scale', 'min' => 0, 'max' => 100, 'required' => true];
         }
-        $ennea = AssessmentDefinition::create(['tenant_id' => $tenant->id, 'family' => (string) Str::uuid(), 'name' => 'Ennéagramme · auto-évaluation', 'kind' => 'enneagramme', 'version' => 1, 'engine_version' => 'self-report-v1', 'questions' => $questions, 'is_demo' => true]);
+        $ennea = AssessmentDefinition::create(['tenant_id' => $tenant->id, 'family' => (string) Str::uuid(), 'name' => 'Ennéagramme · auto-évaluation', 'kind' => 'enneagramme', 'version' => 1, 'engine_version' => 'self-report-v1', 'questions' => $questions, 'is_demo' => true, 'form_key' => 'LEGACY', 'content_status' => 'DEMO']);
+        app(EnneagramDemoForms::class)->create($tenant, $admin);
         $custom = AssessmentDefinition::create(['tenant_id' => $tenant->id, 'family' => (string) Str::uuid(), 'name' => 'Point de parcours', 'kind' => 'personnalise', 'version' => 1, 'engine_version' => 'raw-v1', 'questions' => [['id' => 'ressenti', 'label' => 'Comment abordez-vous cette nouvelle étape ?', 'type' => 'text', 'required' => true], ['id' => 'energie', 'label' => 'Votre niveau d’énergie aujourd’hui', 'type' => 'scale', 'min' => 0, 'max' => 10, 'required' => true], ['id' => 'soutien', 'label' => 'Quel format vous conviendrait ?', 'type' => 'choice', 'options' => ['Échange individuel', 'Atelier collectif', 'Temps de réflexion'], 'required' => true]], 'is_demo' => true]);
         $names = [['Léa', 'Bernard'], ['Thomas', 'Petit'], ['Inès', 'Robert'], ['Lucas', 'Moreau'], ['Emma', 'Laurent'], ['Hugo', 'Simon'], ['Jade', 'Michel'], ['Louis', 'Roux']];
         foreach ($names as $i => [$first,$last]) {
