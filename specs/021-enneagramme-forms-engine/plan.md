@@ -41,3 +41,23 @@ Aucun accès Aiven/Render, aucune migration distante, aucun push/déploiement. L
 Architecture prévue conservée. Trois formes DEMO A/B/C de neuf items, scoring strict, interfaces/catalogue/actions, import/export professionnel des snapshots, reprise/soumission et publication existantes, alias/doc PatientAI et published-only implémentés. Pas de contenu APPROVED opérationnel ; seuls des fixtures SQLite testent les transitions avec références fictives clairement réservées aux tests.
 
 Voir docs/VALIDATION.md pour les commandes/résultats et les limites de Pint global et de concurrence SQLite. Aucun migrate/seeder sur la base applicative ; up/down uniquement dans SQLite :memory: des tests. Aucun appel externe, Aiven, Render ou push.
+
+
+## Feature 021 — correction du workflow multi-formes (4 octobre 2026)
+
+Le POST professionnel `/questionnaires` distingue `creation_mode=questionnaire` (nouvelle famille), `form` (nouvelle clé dans la famille de `previous_id`, version 1), et `version` (même clé, maximum des versions de cette forme + 1). Les anciennes requêtes sans mode gardent leur comportement nouveau questionnaire/nouvelle version selon la présence de `previous_id`.
+
+```text
+FAMILY
+  ├── A v1 → A v2 …
+  ├── B v1 → B v2 …
+  └── C v1 → C v2 …
+```
+
+La référence est résolue sous scope tenant. Une nouvelle forme exige une référence Ennéagramme `enneagramme-weighted-v1`, une clé encore absente et des questions/règles valides. Les créations sont sérialisées par verrou du Tenant dans la transaction ; aucune définition existante n'est modifiée. Le droit publisher existant est conservé, avec audit `enneagramme.forme_creee`. Les imports DEMO et familles DEMO restent DEMO ; aucun reçu de revue/approbation n'est repris. La provenance du snapshot est utilisée si la source du formulaire est vide.
+
+La migration `2026_10_04_165857_scope_definition_versions_to_enneagram_forms` est nécessaire : l'ancien index unique tenant/family/version interdit A v1 et B v1. Elle ajoute `version_scope` (form_key pour Ennéagramme pondéré, chaîne vide pour les autres), remplace l'index par tenant/family/version_scope/version et conserve tous les champs et versions historiques. Les autres familles gardent leur unicité familiale. Le modèle calcule ce scope à la création et protège son immutabilité Ennéagramme. Le rollback refuse les collisions de l'ancien index sans supprimer de données.
+
+Rotation, scoring et permissions PatientAI 019/020 inchangés : sélection des dernières versions éligibles par forme, unused-first puis LRU ; résultats exclusivement publiés. Le générateur canonique local/testing conserve ses versions historiques A1/B2/C3, sans renumérotation ni contournement de sa garde. L'import professionnel crée chaque nouvelle forme à v1, indépendamment de la version du fichier exporté.
+
+Déploiement de cette correction NON réalisé : appliquer la nouvelle migration lors d'une mission dédiée avant de mettre en service le nouveau code. Aucun accès Aiven ni déploiement Render pendant cette correction. Validation MySQL/production de ce nouvel index et contention réelle restent à faire ; tests locaux SQLite uniquement.

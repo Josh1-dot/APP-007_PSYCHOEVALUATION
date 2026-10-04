@@ -191,3 +191,6 @@ Preuves locales SQLite uniquement ; migration applicative/Aiven, déploiement, s
 | REV-002 — contenu externe | Garde-fou testé ; aucune source officielle fournie ni forme opérationnelle APPROVED. Approbation de contenu/licence professionnelle réelle reste PENDING. |
 
 68 tests dédiés / 361 assertions ; PatientAI 312 / 3 360 ; suite complète 413 / 4 026. Code/local tests PASS, contenu psychométrique et déploiement PENDING. Concurrence MySQL non validée ; deux écarts Pint globaux présents dans HEAD et non modifiés. Aucun changement aux permissions/classifications PatientAI 019/020, aucun résultat privé ou non publié autorisé au provider.
+
+
+Feature 021 — correction multi-formes : DefinitionController (`creation_mode`), catalogue Questionnaires, AssessmentDefinition (`version_scope`) et migration `2026_10_04_165857` ; preuves dans EnneagramWorkflowTest et EnneagramMigrationTest. A/B/C même famille à v1, versions par forme, tenant/publisher/DEMO/audit et rotation inchangée ; aucune migration distante ni déploiement de cette correction. E021-REV-002 toujours en attente.

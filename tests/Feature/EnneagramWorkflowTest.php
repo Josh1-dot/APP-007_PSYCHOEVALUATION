@@ -12,6 +12,7 @@ use App\Models\Interpretation;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\EnneagramDemoForms;
+use App\Services\EnneagramFormRotation;
 use App\Services\EnneagramScoring;
 use App\Services\LlmProvider;
 use App\Services\PatientAiChat;
@@ -21,6 +22,7 @@ use App\Services\QuestionnaireHelpTool;
 use App\Services\SafetyPolicy;
 use App\Services\Scoring;
 use Illuminate\Database\Eloquent\JsonEncodingException;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -272,8 +274,8 @@ class EnneagramWorkflowTest extends TestCase
         $this->put('/evaluations/'.$assessment->id.'/reponses', ['answers' => ['a_item1' => 2], 'submit' => 0, 'assessment_definition_id' => 999, 'form_key' => 'C'])->assertRedirect()->assertSessionHasNoErrors();
         $this->get(route('evaluations.show', $assessment))->assertSee('value="2"', false);
         $this->actingAs($this->professional)->post('/questionnaires', ['name' => 'Nouvelle version DEMO A', 'kind' => 'enneagramme', 'previous_id' => $this->form->id, 'form_key' => 'A', 'is_demo' => 1, 'questions' => json_encode($this->form->questions), 'scoring_rules' => json_encode($this->form->scoring_rules)])->assertRedirect()->assertSessionHasNoErrors();
-        $new = AssessmentDefinition::where('family', $this->form->family)->latest('version')->firstOrFail();
-        $this->assertSame(4, $new->version);
+        $new = AssessmentDefinition::where('family', $this->form->family)->where('form_key', 'A')->latest('version')->firstOrFail();
+        $this->assertSame(2, $new->version);
         $this->assertSame($this->form->id, $assessment->fresh()->assessment_definition_id);
         $this->actingAs($this->patient)->put('/evaluations/'.$assessment->id.'/reponses', ['answers' => $this->answers(), 'submit' => 1])->assertRedirect()->assertSessionHasNoErrors();
         $result = $assessment->fresh()->results;
@@ -539,5 +541,109 @@ class EnneagramWorkflowTest extends TestCase
         $payload['is_demo'] = 0;
         $this->post('/questionnaires', $payload)->assertSessionHasErrors('is_demo');
         $this->actingAs($this->patient)->get('/questionnaires/'.$this->form->id.'/export')->assertForbidden();
+    }
+
+    private function importForm(string $key, string $mode = 'questionnaire', ?AssessmentDefinition $reference = null, ?array $rules = null): array
+    {
+        $payload = ['name' => 'DEMO '.$key, 'kind' => 'enneagramme', 'creation_mode' => $mode, 'is_demo' => true, 'source_reference' => $this->form->source_reference, 'form_key' => $key, 'questions' => json_encode($this->form->questions), 'scoring_rules' => json_encode($rules ?? $this->form->scoring_rules)];
+        if ($reference) {
+            $payload['previous_id'] = $reference->id;
+        }
+
+        return $payload;
+    }
+
+    public function test_professional_creates_three_forms_then_versions_without_mutating_history(): void
+    {
+        $this->actingAs($this->professional);
+        $this->get('/questionnaires')->assertOk()->assertSee('Nouvelle forme')->assertSee('Nouvelle version')->assertSee('Nouveau questionnaire');
+        $this->post('/questionnaires', $this->importForm('A'))->assertSessionHasNoErrors();
+        $a = AssessmentDefinition::latest('id')->firstOrFail();
+        foreach (['B', 'C'] as $key) {
+            $canonical = AssessmentDefinition::where('family', $this->form->family)->where('form_key', $key)->firstOrFail();
+            $payload = $this->importForm($key, 'form', $a);
+            unset($payload['source_reference']);
+            $payload['questions_file'] = UploadedFile::fake()->createWithContent('form-'.$key.'.json', json_encode($canonical->only(['engine_version', 'questions', 'scoring_rules', 'form_key', 'is_demo', 'source_reference'])));
+            $this->post('/questionnaires', $payload)->assertSessionHasNoErrors();
+        }
+        $forms = AssessmentDefinition::where('family', $a->family)->orderBy('form_key')->get();
+        $this->assertSame(['A', 'B', 'C'], $forms->pluck('form_key')->all());
+        $this->assertSame([1, 1, 1], $forms->pluck('version')->all());
+        foreach ($forms as $form) {
+            $this->assertSame('DEMO', $form->content_status);
+            $this->assertTrue($form->is_demo);
+            $this->assertNull($form->approved_by);
+            $this->assertNull($form->reviewed_by);
+            $this->assertSame($this->form->source_reference, $form->source_reference);
+        }
+        $rotation = app(EnneagramFormRotation::class);
+        foreach (['A', 'B', 'C', 'A'] as $expected) {
+            $selected = $rotation->selectForAssignment($this->client, $a);
+            $this->assertSame($expected, $selected->form_key);
+            Assessment::create(['tenant_id' => $this->tenant->id, 'client_id' => $this->client->id, 'assigned_by' => $this->professional->id, 'assessment_definition_id' => $selected->id]);
+        }
+        $this->post('/questionnaires', $this->importForm('A', 'version', $a))->assertSessionHasNoErrors();
+        $new = AssessmentDefinition::latest('id')->firstOrFail();
+        $this->assertSame($a->family, $new->family);
+        $this->assertSame('A', $new->form_key);
+        $this->assertSame(2, $new->version);
+        $this->assertSame(1, $a->refresh()->version);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'enneagramme.forme_creee', 'entity_id' => $forms[1]->id]);
+    }
+
+    public function test_new_form_rejects_duplicate_key_and_version_cannot_change_key(): void
+    {
+        $this->actingAs($this->professional);
+        $this->post('/questionnaires', $this->importForm('A', 'form', $this->form))->assertSessionHasErrors('form_key');
+        $this->post('/questionnaires', $this->importForm('B', 'version', $this->form))->assertSessionHasErrors('form_key');
+        $this->assertSame(3, AssessmentDefinition::count());
+    }
+
+    public function test_new_form_requires_valid_scoring_and_preserves_demo(): void
+    {
+        $this->actingAs($this->professional);
+        $this->post('/questionnaires', $this->importForm('D', 'form', $this->form, []))->assertSessionHasErrors();
+        $payload = $this->importForm('D', 'form', $this->form);
+        $payload['is_demo'] = false;
+        $payload['licensed'] = true;
+        $this->post('/questionnaires', $payload)->assertSessionHasErrors('is_demo');
+        $this->assertSame(3, AssessmentDefinition::count());
+    }
+
+    public function test_new_form_cannot_reference_another_tenant_or_be_created_by_patient(): void
+    {
+        $other = Tenant::create(['name' => 'Other']);
+        $author = User::factory()->create(['tenant_id' => $other->id, 'role' => 'psychologue']);
+        $foreign = app(EnneagramDemoForms::class)->create($other, $author)->first();
+        $this->actingAs($this->professional)->post('/questionnaires', $this->importForm('D', 'form', $foreign))->assertNotFound();
+        $this->actingAs($this->patient)->post('/questionnaires', $this->importForm('D', 'form', $this->form))->assertForbidden();
+    }
+
+    public function test_imported_canonical_demo_cannot_drop_demo_marker(): void
+    {
+        $snapshot = $this->form->only(['engine_version', 'questions', 'scoring_rules', 'form_key', 'is_demo', 'source_reference']);
+        $payload = $this->importForm('D', 'form', $this->form);
+        $payload['questions_file'] = UploadedFile::fake()->createWithContent('form.json', json_encode($snapshot));
+        $payload['is_demo'] = false;
+        $this->actingAs($this->professional)->post('/questionnaires', $payload)->assertSessionHasErrors('is_demo');
+    }
+
+    public function test_new_form_requires_weighted_reference_and_professional_publisher(): void
+    {
+        $this->actingAs($this->professional);
+        $this->post('/questionnaires', $this->importForm('D', 'form'))->assertSessionHasErrors('previous_id');
+        $raw = AssessmentDefinition::create(['tenant_id' => $this->tenant->id, 'family' => (string) Str::uuid(), 'name' => 'Raw fixture', 'kind' => 'personnalise', 'version' => 1, 'engine_version' => 'raw-v1', 'questions' => [['id' => 'text', 'label' => 'Text', 'type' => 'text']]]);
+        $this->post('/questionnaires', $this->importForm('D', 'form', $raw))->assertSessionHasErrors('previous_id');
+        $counsellor = User::factory()->create(['tenant_id' => $this->tenant->id, 'role' => 'conseiller']);
+        $this->actingAs($counsellor)->post('/questionnaires', $this->importForm('D', 'form', $this->form))->assertForbidden();
+        $this->assertSame(4, AssessmentDefinition::count());
+    }
+
+    public function test_database_enforces_unique_version_within_each_form(): void
+    {
+        $row = (array) DB::table('assessment_definitions')->where('id', $this->form->id)->first();
+        unset($row['id']);
+        $this->expectException(QueryException::class);
+        DB::table('assessment_definitions')->insert($row);
     }
 }

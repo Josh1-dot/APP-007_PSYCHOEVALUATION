@@ -460,3 +460,22 @@ Les premiers tests additionnels ont révélé une acceptation de booléen pour u
 ### Readiness séparée
 
 SPEC-COMPLETE / CODE-COMPLETE / LOCAL-TEST-COMPLETE pour le périmètre technique local. Pint du périmètre vert ; dette de formatage globale préexistante sur deux fichiers inchangés. Source psychométrique officielle, licence/autorisation réelle et recette professionnelle de contenu : **PENDING**. Aucune forme opérationnelle APPROVED livrée ; DEMO ne permet aucune déclaration de validation psychométrique. MySQL/concurrence réelle, Aiven, Render et recette de production : **NON EXÉCUTÉS / PENDING**. Aucun push, accès Aiven ou déploiement Render.
+
+
+## Feature 021 — correction multi-formes du 4 octobre 2026
+
+Correction locale du blocage de recette : l'import professionnel peut créer A v1 comme nouveau questionnaire, puis B v1 et C v1 comme nouvelles formes de la même famille. Une nouvelle version de A reste A et devient v2. Rotation existante conservée, aucun changement des permissions Features 019/020.
+
+Preuves exécutées sous SQLite `:memory:` :
+- `php artisan test tests/Feature/EnneagramAssessmentTest.php tests/Feature/EnneagramWorkflowTest.php tests/Feature/EnneagramMigrationTest.php --compact` : **77 tests / 421 assertions, PASS**. Les 11 tests initiaux / 57 assertions sont conservés.
+- `php artisan test --filter=PatientAi --compact` : **312 tests / 3 359 assertions, PASS** ; les tests EnneagramWorkflowTest couvrent en plus published-only, manipulation, DTO minimal, impossibilité de falsifier un score et isolation.
+- `php artisan test --compact` : **422 tests / 4 085 assertions, PASS**.
+- Pint des fichiers PHP modifiés et nouvelle migration : PASS.
+- `php artisan route:list --path=questionnaires --no-interaction` : cinq routes existantes, aucun ajout de route ; compilation `view:cache` PASS, cache de vues ensuite nettoyé.
+- `git diff --check` et contrôle ciblé du diff pour secrets : PASS.
+
+Neuf tests ajoutés (sept workflow, deux migration) : création familiale A/B/C à v1 et A v2, clés distinctes, import canonique/provenance, refus doublon/changement de clé/scoring invalide/perte DEMO, référence étrangère/non pondérée/absente, accès patient/conseiller refusé, audit et rotation unused-first/LRU, unicité SQL, conservation historique du backfill et rollback sans perte. Une assertion historique sur la version familiale a été remplacée par l'assertion de version propre à A, avec vérification du snapshot assigné inchangé.
+
+Migration nécessaire `2026_10_04_165857_scope_definition_versions_to_enneagram_forms.php` : nouvelle colonne technique `version_scope`, remplacement de l'index familial par l'unicité tenant/family/scope/version, sans renumérotation ni modification des données patient. Rollback bloqué si l'ancien index est incompatible avec les nouvelles formes. Ne pas appliquer ce rollback en forçant une suppression de données.
+
+Readiness : code et tests locaux PASS ; contenu scientifique/licencié PENDING (E021-REV-002) ; nouvelle migration MySQL, contention réelle et recette Render de cette correction PENDING. Cette mission n'a effectué aucun accès/écriture Aiven, aucun seeder distant, aucun push ni déploiement Render, aucun appel OpenAI. La garde local/testing de EnneagramDemoForms reste intacte. Les fichiers JSON temporaires DEMO ne sont pas ajoutés au dépôt.

@@ -99,3 +99,10 @@ SafetyPolicy v1.1, PatientContextFactory et les refus Feature 019/020 restent av
 ## 10. Statuts de fin
 
 Distinguer obligatoirement : `SPEC-COMPLETE`, `CODE-COMPLETE`, `LOCAL-TEST-COMPLETE`, `AIVEN-PENDING`, `RENDER-PENDING`, `REAL-RECIPE-PENDING`, et `PSYCHOMETRIC-CONTENT-APPROVAL-PENDING` pour tout dataset DEMO sans source officielle.
+
+
+## Correction de recette — workflow professionnel multi-formes
+
+Trois actions explicites : nouveau questionnaire crée une famille ; nouvelle forme ajoute une clé distincte dans une famille Ennéagramme pondérée existante à v1 ; nouvelle version conserve family/form_key et incrémente uniquement la version de cette forme. A/B/C peuvent ainsi coexister à v1, puis évoluer indépendamment. Une nouvelle version ne peut jamais changer de clé. Doublons et références inter-tenant sont refusés ; les imports DEMO restent DEMO, sans approbation héritée.
+
+L'unicité doit porter sur tenant/family/forme/version pour les formes pondérées, et rester familiale pour les autres moteurs. Aucune renumérotation des versions déjà assignées, aucune mutation de snapshot. Le catalogue professionnel expose action et définition de référence avec clé/version/famille ; aucun nouveau droit patient ou PatientAI.

@@ -51,3 +51,15 @@ Ne pas marquer `APPROVED` sans source exacte/licence et approbation professionne
 - E021-018 : Pint des fichiers livrés PASS ; Pint global révèle deux écarts préexistants dans Backups.php et PatientAiAppointmentTest.php, confirmés sur HEAD et laissés inchangés. Routes/Blade/PDF/diff/scan ciblé secrets validés.
 - E021-019 : code readiness et local test readiness PASS ; psychometric/content readiness PENDING ; Aiven/Render/recette réelle PENDING. Aucun statut APPROVED officiel inventé.
 - E021-020 : livraison locale seulement ; fichier d’audit de workflow préexistant conservé comme trace historique, aucun push/Aiven/Render.
+
+
+## Correction du blocage de recette multi-formes — 4 octobre 2026
+
+- [x] Distinguer nouveau questionnaire / nouvelle forme / nouvelle version dans le POST et le catalogue professionnel.
+- [x] Créer A/B/C dans une famille à v1, puis incrémenter par clé, sans mutation des snapshots ni modification de rotation.
+- [x] Conserver DEMO, permissions publisher, tenant, provenance et audit de nouvelle forme.
+- [x] Adapter l'unicité SQL avec version_scope ; conserver les versions historiques et refuser un rollback incompatible sans perte.
+- [x] Valider 77 tests Ennéagramme / 421 assertions, 312 tests PatientAI / 3 359 assertions, suite complète 422 / 4 085, Pint/routes/Blade/diff.
+- [ ] Appliquer la nouvelle migration sur MySQL lors d'une mission dédiée avant la mise en service du code corrigé ; recette réelle A/B/C puis rotation à effectuer. Aucune action distante pendant cette correction.
+
+E021-REV-002 reste en attente. Code/test readiness local PASS ; psychometric/content readiness PENDING ; production readiness de cette correction PENDING.

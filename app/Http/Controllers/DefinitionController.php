@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AssessmentDefinition;
+use App\Models\Tenant;
 use App\Services\Access;
 use App\Services\EnneagramScoring;
 use App\Services\Scoring;
@@ -34,12 +35,12 @@ class DefinitionController extends Controller
                 if (($snapshot['is_demo'] ?? false) && ! $r->boolean('is_demo')) {
                     throw ValidationException::withMessages(['is_demo' => 'Un export DEMO doit rester DEMO.']);
                 }
-                $r->merge(['questions' => json_encode($snapshot['questions'] ?? null), 'form_key' => $snapshot['form_key'] ?? null, 'scoring_rules' => json_encode($snapshot['scoring_rules'] ?? null)]);
+                $r->merge(['source_reference' => $r->input('source_reference') ?: ($snapshot['source_reference'] ?? null), 'questions' => json_encode($snapshot['questions'] ?? null), 'form_key' => $snapshot['form_key'] ?? null, 'scoring_rules' => json_encode($snapshot['scoring_rules'] ?? null)]);
             } else {
                 $r->merge(['questions' => $fileContents]);
             }
         }
-        $d = $r->validate(['name' => 'required|string|max:200', 'kind' => 'required|in:gordon,enneagramme,besoins,personnalise', 'questions' => 'required|json|max:100000', 'previous_id' => 'nullable|integer', 'is_demo' => 'nullable|boolean', 'source_reference' => 'nullable|string|max:2000', 'licensed' => 'nullable|boolean', 'form_key' => 'nullable|string|max:40', 'scoring_rules' => 'nullable|json|max:100000']);
+        $d = $r->validate(['name' => 'required|string|max:200', 'kind' => 'required|in:gordon,enneagramme,besoins,personnalise', 'questions' => 'required|json|max:100000', 'previous_id' => 'nullable|integer', 'creation_mode' => 'nullable|in:questionnaire,version,form', 'is_demo' => 'nullable|boolean', 'source_reference' => 'nullable|string|max:2000', 'licensed' => 'nullable|boolean', 'form_key' => 'nullable|string|max:40', 'scoring_rules' => 'nullable|json|max:100000']);
         if ($d['kind'] !== 'personnalise' && ! $r->boolean('is_demo') && (! $r->boolean('licensed') || ! $r->filled('source_reference'))) {
             throw ValidationException::withMessages(['source_reference' => 'Indiquez la source et confirmez votre autorisation d’utilisation, ou marquez cette version comme démonstration.']);
         }
@@ -55,7 +56,14 @@ class DefinitionController extends Controller
                 throw ValidationException::withMessages(['questions' => 'Chaque échelle nécessite un minimum inférieur au maximum.']);
             }
         }
+        $creationMode = $d['creation_mode'] ?? (isset($d['previous_id']) ? 'version' : 'questionnaire');
+        if (($creationMode === 'questionnaire') !== ! isset($d['previous_id'])) {
+            throw ValidationException::withMessages(['previous_id' => 'Choisissez une définition de référence pour une nouvelle forme ou version uniquement.']);
+        }
         $previousDefinition = isset($d['previous_id']) ? AssessmentDefinition::findOrFail($d['previous_id']) : null;
+        if ($creationMode === 'form' && ($d['kind'] !== 'enneagramme' || $previousDefinition?->engine_version !== EnneagramScoring::ENGINE_VERSION)) {
+            throw ValidationException::withMessages(['previous_id' => 'Une nouvelle forme exige une famille Ennéagramme pondérée.']);
+        }
         if ($previousDefinition && $previousDefinition->kind !== $d['kind']) {
             throw ValidationException::withMessages(['previous_id' => 'Une nouvelle version doit conserver la famille de questionnaire.']);
         }
@@ -63,6 +71,7 @@ class DefinitionController extends Controller
 
         if (
             $weightedEnneagram
+            && $creationMode === 'version'
             && $previousDefinition
             && $previousDefinition->engine_version === EnneagramScoring::ENGINE_VERSION
             && strtoupper((string) $previousDefinition->form_key) !== strtoupper((string) ($d['form_key'] ?? ''))
@@ -83,9 +92,17 @@ class DefinitionController extends Controller
         if ($d['kind'] === 'enneagramme' && ! $weightedEnneagram && (count($questions) !== 9 || collect($questions)->contains(fn ($q) => $q['type'] !== 'scale' || ($q['min'] ?? null) !== 0 || ($q['max'] ?? null) !== 100))) {
             throw ValidationException::withMessages(['questions' => 'L’ancien format self-report-v1 exige neuf échelles de 0 à 100.']);
         }
-        DB::transaction(function () use ($d, $questions, $scoring, $enneagram, $weightedEnneagram, $scoringRules) {
+        DB::transaction(function () use ($d, $questions, $scoring, $enneagram, $weightedEnneagram, $scoringRules, $creationMode) {
+            Tenant::whereKey(auth()->user()->tenant_id)->lockForUpdate()->firstOrFail();
             $previous = isset($d['previous_id']) ? AssessmentDefinition::lockForUpdate()->findOrFail($d['previous_id']) : null;
-            $version = $previous ? (AssessmentDefinition::where('family', $previous->family)->max('version') + 1) : 1;
+            $familyDefinitions = $previous ? AssessmentDefinition::where('family', $previous->family) : null;
+            $formKey = $weightedEnneagram ? strtoupper($d['form_key']) : null;
+            if ($creationMode === 'form' && (clone $familyDefinitions)->where('form_key', $formKey)->exists()) {
+                throw ValidationException::withMessages(['form_key' => 'Cette clé de forme existe déjà dans cette famille.']);
+            }
+            $version = $creationMode === 'version'
+                ? ((clone $familyDefinitions)->when($weightedEnneagram, fn ($query) => $query->where('form_key', $formKey))->max('version') + 1)
+                : 1;
             $isDemo = (bool) ($d['is_demo'] ?? false);
             $model = new AssessmentDefinition([
                 'family' => $previous?->family ?? (string) Str::uuid(),
@@ -114,7 +131,7 @@ class DefinitionController extends Controller
                 $enneagram->validateDefinition($model);
             }
             $model->save();
-            Access::audit('questionnaire.version_creee', $model);
+            Access::audit($creationMode === 'form' ? 'enneagramme.forme_creee' : 'questionnaire.version_creee', $model);
         });
 
         return back()->with('success', 'Version immuable créée. Les passations existantes conservent leur version.');
