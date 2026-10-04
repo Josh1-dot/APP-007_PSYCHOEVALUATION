@@ -59,6 +59,79 @@ if (builder) {
   });
  }
  builder.querySelector('[data-add-question]').addEventListener('click',()=>{questions.push({id:`question_${Date.now()}`,label:'',type:'text',required:true});render();sync();});
- function load(){try{const value=JSON.parse(json.value);if(!Array.isArray(value))throw new Error();questions=value;render();status.textContent=`${questions.length} question(s) chargées.`;}catch{status.textContent='Le JSON doit contenir une liste de questions valide.';}}
- builder.querySelector('[data-load-json]').addEventListener('click',load);load();
+ const editorForm = builder.closest('form');
+ const fileInput = editorForm.querySelector('[name="questions_file"]');
+ const loadButton = builder.querySelector('[data-load-json]');
+ function decodeImport(text) {
+  let value;
+  try { value = JSON.parse(text); } catch { throw new Error('JSON invalide : vérifiez la syntaxe du fichier.'); }
+  const snapshot = !Array.isArray(value) && value && typeof value === 'object' ? value : null;
+  const items = snapshot ? snapshot.questions : value;
+  if (!Array.isArray(items) || !items.length || items.length > 250 || items.some(q => !q || typeof q !== 'object' || Array.isArray(q) || typeof q.id !== 'string' || typeof q.label !== 'string' || !q.label.trim() || !/^[A-Za-z][A-Za-z0-9_]{0,39}$/.test(q.id) || !['text','choice','scale','boolean'].includes(q.type) || (q.type === 'choice' && (!Array.isArray(q.options) || q.options.length < 2 || q.options.some(option => typeof option !== 'string'))) || (q.type === 'scale' && (!Number.isInteger(q.min) || !Number.isInteger(q.max) || q.min < 0 || q.max > 100 || q.min >= q.max)))) {
+   throw new Error('Structure incorrecte : une liste de 1 à 250 questions valides est requise.');
+  }
+  if (new Set(items.map(q => q.id)).size !== items.length) throw new Error('Identifiants de questions dupliqués');
+  if (snapshot) {
+   if (items.some(q => typeof q.item_key !== 'string' || !Number.isInteger(q.item_version) || q.item_version < 1 || !['fr','en'].includes(q.language) || typeof q.provenance !== 'string' || !q.provenance.trim())) throw new Error('Métadonnées des items pondérés manquantes');
+   if (snapshot.kind !== 'enneagramme' || snapshot.engine_version !== 'enneagramme-weighted-v1' || !/^[A-Za-z0-9][A-Za-z0-9_-]{0,39}$/.test(snapshot.form_key || '')) {
+    throw new Error('Export incorrect : utilisez un export Ennéagramme pondéré avec une clé de forme.');
+   }
+   const rules = snapshot.scoring_rules;
+   const dimensions = Array.from({length:9}, (_, i) => `type${i+1}`);
+   const object = value => value && typeof value === 'object' && !Array.isArray(value);
+   if (!object(rules) || rules.method_version !== snapshot.engine_version || JSON.stringify(rules.dimensions) !== JSON.stringify(dimensions) || !object(rules.items) || Object.keys(rules.items).length !== items.length || items.length < 9) {
+    throw new Error('Règles de scoring invalides : version, neuf dimensions et règles par item requises.');
+   }
+   if (new Set(items.map(q => q.id)).size !== items.length) throw new Error('Identifiants de questions dupliqués');
+   const covered = new Set();
+   for (const q of items) {
+    const rule = rules.items[q.id];
+    if (!object(rule) || !object(rule.dimension_weights) || !Object.keys(rule.dimension_weights).length || Object.entries(rule.dimension_weights).some(([key, weight]) => !dimensions.includes(key) || typeof weight !== 'number' || !Number.isFinite(weight) || weight <= 0 || weight > 100) || !object(rule.score_map) || !Object.keys(rule.score_map).length || (rule.reverse !== undefined && typeof rule.reverse !== 'boolean')) {
+     throw new Error('Règles de scoring invalides pour un item.');
+    }
+    Object.keys(rule.dimension_weights).forEach(key => covered.add(key));
+    let answers;
+    if (q.type === 'scale' && Number.isInteger(q.min) && Number.isInteger(q.max) && q.min >= 0 && q.max <= 100 && q.min < q.max) answers = Array.from({length:q.max-q.min+1}, (_, i) => String(q.min+i));
+    else if (q.type === 'choice' && Array.isArray(q.options) && q.options.length >= 2) answers = q.options.map(String);
+    else if (q.type === 'boolean') answers = ['0','1'];
+    else throw new Error('Type ou bornes de réponse invalides');
+    if (JSON.stringify(Object.keys(rule.score_map).sort()) !== JSON.stringify(answers.sort()) || (rule.reverse && q.type !== 'scale')) throw new Error('Règles de scoring incompatibles avec les réponses permises');
+    for (const points of Object.values(rule.score_map)) {
+     if (!object(points) || Object.keys(points).length !== Object.keys(rule.dimension_weights).length || Object.keys(rule.dimension_weights).some(key => typeof points[key] !== 'number' || !Number.isFinite(points[key]) || points[key] < 0 || points[key] > 100)) {
+      throw new Error('Points de scoring invalides.');
+     }
+    }
+   }
+   if (covered.size !== 9) throw new Error('Les règles doivent couvrir les neuf dimensions');
+  }
+  return {items, snapshot};
+ }
+ function applyImport(text) {
+  const {items, snapshot} = decodeImport(text);
+  if (snapshot) {
+   editorForm.querySelector('[name="kind"]').value = 'enneagramme';
+   editorForm.querySelector('[name="form_key"]').value = snapshot.form_key;
+   editorForm.querySelector('[name="scoring_rules"]').value = JSON.stringify(snapshot.scoring_rules, null, 2);
+   const source = editorForm.querySelector('[name="source_reference"]');
+   if (!source.value && typeof snapshot.source_reference === 'string') source.value = snapshot.source_reference;
+  }
+  questions = items; render(); sync();
+  status.textContent = `${questions.length} question(s) chargées.`;
+  if (snapshot?.is_demo) status.textContent += ' Export DEMO : cochez explicitement « Questionnaire de démonstration (non validé) » avant de créer la version.';
+  status.setAttribute('role', 'status');
+ }
+ function showImportError(error) {
+  status.setAttribute('role', 'alert');
+  status.textContent = `Import échoué : ${error.message || 'lecture du fichier impossible'}. L’éditeur précédent reste inchangé.`;
+ }
+ loadButton.addEventListener('click', async () => {
+  loadButton.disabled = true; status.textContent = 'Lecture du JSON…';
+  try {
+   const file = fileInput.files?.[0];
+   if (file && file.size > 200 * 1024) throw new Error('Le fichier dépasse la limite de 200 Ko');
+   applyImport(file ? await file.text() : json.value);
+  } catch (error) { showImportError(error); }
+  finally { loadButton.disabled = false; }
+ });
+ try { applyImport(json.value); } catch (error) { showImportError(error); }
 }

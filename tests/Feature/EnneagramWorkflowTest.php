@@ -31,6 +31,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Symfony\Component\Process\Process;
 use Tests\TestCase;
 
 class EnneagramWorkflowTest extends TestCase
@@ -645,5 +646,48 @@ class EnneagramWorkflowTest extends TestCase
         unset($row['id']);
         $this->expectException(QueryException::class);
         DB::table('assessment_definitions')->insert($row);
+    }
+
+    public function test_frontend_reads_canonical_files_and_reports_import_failures(): void
+    {
+        $snapshots = AssessmentDefinition::where('family', $this->form->family)->orderBy('form_key')->get()->map(fn ($form) => $form->only(['kind', 'engine_version', 'form_key', 'questions', 'scoring_rules', 'is_demo', 'source_reference']))->all();
+        $process = new Process(['node', 'tests/questionnaire-import.test.cjs'], base_path());
+        $process->setInput(json_encode($snapshots, JSON_THROW_ON_ERROR));
+        $process->run();
+        $this->assertTrue($process->isSuccessful(), $process->getErrorOutput());
+        $this->assertStringContainsString('PASS:', $process->getOutput());
+    }
+
+    public function test_canonical_abc_file_import_preserves_nine_items_and_demo_without_approval(): void
+    {
+        $this->actingAs($this->professional);
+        foreach (AssessmentDefinition::where('family', $this->form->family)->orderBy('form_key')->get() as $canonical) {
+            $snapshot = $canonical->only(['kind', 'engine_version', 'form_key', 'questions', 'scoring_rules', 'is_demo', 'source_reference']);
+            $snapshot['content_status'] = 'APPROVED';
+            $snapshot['approved_by'] = $this->professional->id;
+            $snapshot['licensed'] = true;
+            $payload = $this->importForm($canonical->form_key);
+            $payload['questions_file'] = UploadedFile::fake()->createWithContent('canonical.json', json_encode($snapshot));
+            $this->post('/questionnaires', $payload)->assertSessionHasNoErrors();
+            $created = AssessmentDefinition::latest('id')->firstOrFail();
+            $this->assertCount(9, $created->questions);
+            $this->assertSame($canonical->form_key, $created->form_key);
+            $this->assertSame($canonical->scoring_rules, $created->scoring_rules);
+            $this->assertTrue($created->is_demo);
+            $this->assertSame('DEMO', $created->content_status);
+            $this->assertFalse($created->licensed);
+            $this->assertNull($created->approved_by);
+        }
+    }
+
+    public function test_invalid_json_and_incorrect_file_formats_are_refused(): void
+    {
+        $this->actingAs($this->professional);
+        foreach (['{', '{}', '{"questions":[]}'] as $text) {
+            $payload = $this->importForm('A');
+            $payload['questions_file'] = UploadedFile::fake()->createWithContent('invalid.json', $text);
+            $this->post('/questionnaires', $payload)->assertSessionHasErrors();
+        }
+        $this->assertSame(3, AssessmentDefinition::count());
     }
 }

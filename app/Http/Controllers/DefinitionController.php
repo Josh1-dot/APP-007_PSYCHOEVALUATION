@@ -30,7 +30,11 @@ class DefinitionController extends Controller
         if ($r->hasFile('questions_file')) {
             $r->validate(['questions_file' => 'file|max:200|mimetypes:application/json,text/plain']);
             $fileContents = file_get_contents($r->file('questions_file')->getRealPath());
-            $snapshot = json_decode($fileContents, true);
+            try {
+                $snapshot = json_decode($fileContents, true, 512, JSON_THROW_ON_ERROR);
+            } catch (\JsonException) {
+                throw ValidationException::withMessages(['questions_file' => 'JSON invalide : vérifiez la syntaxe du fichier importé.']);
+            }
             if ($r->input('kind') === 'enneagramme' && is_array($snapshot) && ($snapshot['engine_version'] ?? null) === EnneagramScoring::ENGINE_VERSION) {
                 if (($snapshot['is_demo'] ?? false) && ! $r->boolean('is_demo')) {
                     throw ValidationException::withMessages(['is_demo' => 'Un export DEMO doit rester DEMO.']);

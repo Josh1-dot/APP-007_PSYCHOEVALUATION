@@ -479,3 +479,21 @@ Neuf tests ajoutés (sept workflow, deux migration) : création familiale A/B/C 
 Migration nécessaire `2026_10_04_165857_scope_definition_versions_to_enneagram_forms.php` : nouvelle colonne technique `version_scope`, remplacement de l'index familial par l'unicité tenant/family/scope/version, sans renumérotation ni modification des données patient. Rollback bloqué si l'ancien index est incompatible avec les nouvelles formes. Ne pas appliquer ce rollback en forçant une suppression de données.
 
 Readiness : code et tests locaux PASS ; contenu scientifique/licencié PENDING (E021-REV-002) ; nouvelle migration MySQL, contention réelle et recette Render de cette correction PENDING. Cette mission n'a effectué aucun accès/écriture Aiven, aucun seeder distant, aucun push ni déploiement Render, aucun appel OpenAI. La garde local/testing de EnneagramDemoForms reste intacte. Les fichiers JSON temporaires DEMO ne sont pas ajoutés au dépôt.
+
+
+## Feature 021 — correction du chargeur JSON professionnel (4 octobre 2026)
+
+Cause : `data-load-json` relisait uniquement la zone texte et acceptait seulement une liste JSON. Le fichier sélectionné n'était jamais lu ; le snapshot d'export pondéré est un objet (`questions`, `form_key`, `scoring_rules`, `engine_version`), et non une liste.
+
+Le bouton lit désormais le fichier sélectionné via `File.text()` (priorité au fichier, limite 200 Ko), ou la zone texte en l'absence de fichier. Il accepte les listes historiques et les exports Ennéagramme pondérés ; il valide la structure avant remplacement, affiche les neuf items et reprend la clé, les règles, le type et la provenance si la source est vide. DEMO doit être coché explicitement, licence/approval jamais importées. Échec JSON/structure/questions/règles/lecture : message `Import échoué`, rôle alert, éditeur précédent conservé. La validation Laravel/EnneagramScoring reste autorité finale ; JSON malformé produit une erreur de validation sur questions_file. L'URL app.js porte une version basée sur sa date de modification pour invalider les anciennes copies du navigateur.
+
+Preuves locales :
+- EnneagramAssessmentTest + EnneagramWorkflowTest + EnneagramMigrationTest : **80 tests / 451 assertions, PASS**.
+- PatientAi (`--filter=PatientAi`) : **312 tests / 3 361 assertions, PASS**.
+- Suite complète `php artisan test --compact` : **425 tests / 4 115 assertions, PASS**.
+- RenderHttpsTest : **3 tests / 13 assertions, PASS**, HTTPS conservé avec URL du script versionnée.
+- Régression JavaScript `tests/questionnaire-import.test.cjs` exécutée dans EnneagramWorkflowTest : gestionnaire réel app.js dans un DOM simulé, sélection/clic de A/B/C, neuf cartes/JSON/clé/règles, cases DEMO/licence inchangées, erreurs visibles sans remplacement, compatibilité liste et échec lecture. Ce test exige Node.js (v18 disponible localement), sans dépendance npm ni ajout de paquet.
+- Même test exécuté séparément avec les fichiers canoniques `/tmp/feature021-demo-imports/enneagramme-demo-{A,B,C}.json` : PASS.
+- Pint fichiers modifiés PASS, syntaxe JavaScript PASS, routes complètes et compilation Blade PASS, diff et recherche ciblée de secrets PASS.
+
+Aucune nouvelle migration nécessaire. Aucun accès/écriture Aiven, seeder, création applicative de forme hors fixtures locales SQLite, appel OpenAI, push ou déploiement Render pendant cette correction. Permissions et published-only PatientAI inchangés ; E021-REV-002 toujours en attente. Validation réelle du navigateur Render après livraison reste à effectuer.

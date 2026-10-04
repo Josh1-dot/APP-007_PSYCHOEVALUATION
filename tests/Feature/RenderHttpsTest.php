@@ -29,7 +29,7 @@ class RenderHttpsTest extends TestCase
         $this->get('http://cabinet.example.test/')
             ->assertOk()
             ->assertSee('href="https://cabinet.example.test/assets/app.css"', false)
-            ->assertSee('src="https://cabinet.example.test/assets/app.js"', false)
+            ->assertSee('src="https://cabinet.example.test/assets/app.js?v='.filemtime(public_path('assets/app.js')).'"', false)
             ->assertDontSee('http://cabinet.example.test/assets/', false);
     }
 
@@ -38,7 +38,7 @@ class RenderHttpsTest extends TestCase
         $this->get('http://localhost/')
             ->assertOk()
             ->assertSee('href="http://localhost/assets/app.css"', false)
-            ->assertSee('src="http://localhost/assets/app.js"', false);
+            ->assertSee('src="http://localhost/assets/app.js?v='.filemtime(public_path('assets/app.js')).'"', false);
     }
 
     public function test_signed_document_download_works_behind_the_https_proxy(): void
