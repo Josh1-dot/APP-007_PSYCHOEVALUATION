@@ -126,6 +126,13 @@ class ConversationIntentRouter
         return in_array($normalized, [
             'quel est mon resultat', 'quel est mon resultat publie', 'explique mon resultat', 'explique moi mon resultat',
             'explique mon resultat publie', 'explique moi mon resultat publie', 'quel est le resultat de cette evaluation',
+            'peux tu m expliquer le resultat de mon enneagramme demo que mon professionnel vient de publier',
+            'peux tu m expliquer le resultat de mon enneagramme que mon professionnel vient de publier',
+            'peux tu m expliquer le resultat de mon enneagramme publie',
+            'explique le resultat de mon enneagramme publie',
+            'explique moi le resultat de mon enneagramme demo publie',
+            'explique moi le resultat de mon enneagramme publie',
+            'quel est le resultat de mon enneagramme publie',
             'que signifie ma restitution', 'what is my published result', 'explain my published result',
         ], true);
     }

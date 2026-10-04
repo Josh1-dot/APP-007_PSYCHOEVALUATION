@@ -11,6 +11,7 @@ use App\Models\Consent;
 use App\Models\Interpretation;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\ConversationIntentRouter;
 use App\Services\EnneagramDemoForms;
 use App\Services\EnneagramFormRotation;
 use App\Services\EnneagramScoring;
@@ -689,5 +690,41 @@ class EnneagramWorkflowTest extends TestCase
             $this->post('/questionnaires', $payload)->assertSessionHasErrors();
         }
         $this->assertSame(3, AssessmentDefinition::count());
+    }
+
+    public function test_natural_published_enneagram_request_reaches_authorized_result_without_private_data(): void
+    {
+        $assessment = $this->assessment();
+        $answers = array_combine(array_column($this->form->questions, 'id'), [5, 4, 3, 2, 1, 2, 3, 4, 2]);
+        $results = app(EnneagramScoring::class)->calculate($this->form, $answers);
+        $assessment->update(['status' => 'publie', 'results' => $results, 'answers' => $answers]);
+        Interpretation::create(['tenant_id' => $this->tenant->id, 'assessment_id' => $assessment->id, 'published_at' => now(), 'published_content' => 'Restitution professionnelle publiée DEMO.', 'draft' => 'PRIVATE_DRAFT', 'ai_generations' => [['content' => 'PRIVATE_GENERATION']]]);
+        $conversation = $this->conversation();
+        $message = 'Peux-tu m’expliquer le résultat de mon Ennéagramme DEMO que mon professionnel vient de publier ?';
+        $this->assertSame('published_result', app(ConversationIntentRouter::class)->route($message));
+        $reply = $this->send($conversation, $message);
+        foreach (['Résultat publié — faits', 'type1 : 100 / 100', 'type2 : 75 / 100', 'type5 : 0 / 100', 'Restitution professionnelle publiée DEMO.', 'Questionnaire de démonstration', 'ne pose aucun diagnostic'] as $fact) {
+            $this->assertStringContainsString($fact, $reply);
+        }
+        foreach (['PRIVATE_DRAFT', 'PRIVATE_GENERATION', 'answers', 'scoring_rules', 'score_map', 'dimension_weights'] as $private) {
+            $this->assertStringNotContainsString($private, $reply);
+        }
+        $assessment->update(['status' => 'termine']);
+        $this->assertStringContainsString('Aucun résultat publié', $this->send($conversation, $message));
+        Http::assertNothingSent();
+    }
+
+    public function test_natural_result_request_does_not_choose_arbitrarily_among_publications(): void
+    {
+        foreach (range(1, 2) as $index) {
+            $assessment = $this->assessment();
+            $assessment->update(['status' => 'publie', 'results' => app(EnneagramScoring::class)->calculate($this->form, $this->answers())]);
+            Interpretation::create(['tenant_id' => $this->tenant->id, 'assessment_id' => $assessment->id, 'published_at' => now(), 'draft' => 'PRIVATE_DRAFT', 'published_content' => 'Do not choose '.$index]);
+        }
+        $conversation = $this->conversation();
+        $reply = $this->send($conversation, 'Peux-tu m’expliquer le résultat de mon Ennéagramme publié ?');
+        $this->assertStringNotContainsString('Do not choose', $reply);
+        $this->assertStringNotContainsString('Résultat publié — faits', $reply);
+        Http::assertNothingSent();
     }
 }

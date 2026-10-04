@@ -497,3 +497,20 @@ Preuves locales :
 - Pint fichiers modifiés PASS, syntaxe JavaScript PASS, routes complètes et compilation Blade PASS, diff et recherche ciblée de secrets PASS.
 
 Aucune nouvelle migration nécessaire. Aucun accès/écriture Aiven, seeder, création applicative de forme hors fixtures locales SQLite, appel OpenAI, push ou déploiement Render pendant cette correction. Permissions et published-only PatientAI inchangés ; E021-REV-002 toujours en attente. Validation réelle du navigateur Render après livraison reste à effectuer.
+
+
+## Feature 021 × PatientAI — routage du résultat Ennéagramme publié (4 octobre 2026)
+
+Cause reproduite localement : la phrase « Peux-tu m’expliquer le résultat de mon Ennéagramme DEMO que mon professionnel vient de publier ? » était absente de la liste bornée de ConversationIntentRouter. Elle aboutissait à unknown/fallback sans appeler PatientPublishedResultTool. Le portail patient utilise ses contrôles/publication directement et ne dépend pas de ce routage conversationnel. Le support du moteur pondéré existait déjà dans l'outil publié ; pas de nouveau retrieval/RAG ni changement de classification/permissions.
+
+Ajout de sept formulations normalisées explicites, toutes dispatchées vers published_result. Réutilisation du PatientContext, des références serveur de conversation, de la résolution publiée avec clarification si plusieurs candidats, du DTO minimal et du provider fake. Publication effective/tenant/Client propriétaire, cohérence moteur/méthode/version/form_key et scores restent vérifiés par Laravel. Aucun assouplissement pour DEMO, brouillons, autres patients ou tenants.
+
+DTO inchangé : disponibilité, UUID autorisé, nom/version, date de publication, neuf scores autorisés, maximum/méthode, texte publié borné (éventuel extrait), lien patient généré par Laravel et isDemo. Aucun modèle Eloquent, réponse brute, scoring_rules, score_map, dimension_weights, draft, ai_generation ou ClinicalNote transmis au provider. Réponse existante distingue faits publiés et explication descriptive, conserve l'avertissement démonstration/non validée et absence de diagnostic.
+
+Preuves : deux régressions nouvelles, phrase exacte sans UUID + vecteur de recette [100,75,50,25,0,25,50,75,25], restitution publiée, exclusion des marqueurs privés, refus après dépublication et clarification de plusieurs publications. Http::assertNothingSent et fake provider, sans accès distant.
+- PatientAI ciblé : **312 tests / 3 359 assertions, PASS**.
+- Feature 021 ciblée : **82 tests / 470 assertions, PASS**, incluant régressions existantes published-only, draft/ai_generations, DTO privé, falsification de score, manipulation/règles/poids et isolation patient/tenant.
+- Suite complète `php artisan test --compact` : **427 tests / 4 134 assertions, PASS**.
+- Pint fichiers modifiés, routes et git diff --check, contrôle ciblé secrets : PASS.
+
+Aucune migration. Aucun accès/écriture Aiven, modification de l'évaluation 2, nouvelle passation applicative, OpenAI, push ou déploiement Render. Fixtures locales seulement ; E021-REV-002 reste en attente. Routage volontairement borné : si plusieurs résultats sont possibles sans référence autorisée, clarification/UUID requis ; aucune sélection arbitraire. Recette réelle Render de cette correction reste à effectuer.
